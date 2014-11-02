@@ -37,7 +37,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
     }
 
 
-    // Setting default values for background color, font family, size, color and if not provided in init
+    // Setting default values for background color, font family, size, color and if not set in init
     if (backgroundColor !== null) {
         canvas.style.background = backgroundColor;
     } else {
@@ -60,12 +60,14 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         textColor = '#000';
     }
 
-    ci.font = fontWeight.trim() + ' ' + fontSize.toString() + 'px ' + fontFamily.trim();
+    fontWeight = fontWeight.trim();
+    fontFamily = fontFamily.trim();
+
+    ci.font = fontWeight + ' ' + fontSize.toString() + 'px ' + fontFamily;
     ci.textAlign = "left";
     ci.fillStyle = textColor;
 
     var textRawData = '';
-    var dataLoaded = false;
 
     // Textloader using ajax
     function loadText() {
@@ -82,17 +84,18 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
     var startMatch = /<[^\/][a-z0-9\s\=\"\#\'\*]*>/g;
     var imgMatch = /<img[^<]*/g;
-    
+
     function simpleParse(formatData) {
-        lg("--------------------------------");
-        
+        lg("--------PARSER DATA-------------");
+
         var parserObject = {};
         parserObject.data = [];
         parserObject.tags = [];
         parserObject.images = [];
         parserObject.order = [];
         parserObject.keyValueStore = {};
-        
+        parserObject.triggers = [];
+
         // Preprocess and remove image from formatting data
         var imageData = formatData.match(imgMatch);
         if (imageData !== null) {
@@ -102,8 +105,8 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 parserObject.order.push(-3);
             }
         }
-        
-        
+
+
         parserObject.tags = formatData.match(startMatch);
 
         var parserData = "";
@@ -142,28 +145,28 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
             // Matches if we have resolved a encapsulated tags
             if (tagOrder === -1) {
                 parserData = formatData.substring(0, formatData.indexOf(parserObject.tags[tag]));
-                
+
                 if (parserData === '') {
                     tag--;
                     tagOrder++;
                     continue;
                 }
-                
+
                 parserObject.data.push(parserData);
                 if (hasOpenTag) {
                     parserObject.order.push(parserObject.tags.indexOf(parserObject.tags[tag]));
                 } else {
-                    if ( startIndex === -1 && formatData.indexOf(parserObject.tags[tag]) > 0) {
-                        parserObject.order.push(openTag-1);
+                    if (startIndex === -1 && formatData.indexOf(parserObject.tags[tag]) > 0) {
+                        parserObject.order.push(openTag - 1);
                     } else {
                         parserObject.order.push(-1);
                     }
                 }
-                
+
                 formatData = formatData.substr(parserData.length);
                 tag--;
                 tagOrder++;
-                
+
                 continue;
             }
 
@@ -198,13 +201,13 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                         openTag = tagOrder;
                     }
                     tagOrder++;
-                    
+
                 }
             } else {
                 // Single tag element or closing, might be inside another tag
                 parserData = formatData.substring(parserObject.tags[tag].length, closingIndex);
                 parserObject.data.push(parserData);
-                
+
                 formatData = formatData.substr(closingIndex + 3);
 
                 if (hasOpenTag) {
@@ -213,7 +216,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 } else {
                     parserObject.order.push(parserObject.tags.indexOf(parserObject.tags[tag]));
                 }
-                
+
                 while (tagOrder-- > openTag) {
                     formatData = formatData.replace('</>', '');
                 }
@@ -226,33 +229,75 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
         for (var tag = 0; tag < tagLength; tag++) {
             var currentTag = parserObject.tags[tag];
- 
-            for (var subTag = tag+1; subTag < tagLength; subTag++) {
+
+            for (var subTag = tag + 1; subTag < tagLength; subTag++) {
                 if (currentTag === parserObject.tags[subTag]) {
                     for (var item = 0; item < tagOrders; item++) {
                         if (subTag === parserObject.order[item]) {
                             parserObject.order[item] = tag;
                         }
                     }
-                    
+
                     parserObject.tags.splice(subTag, 1);
                     tagLength--;
                     tag--;
                 }
             }
         }
-        
+
+        // Create key value store for formatting after parsing the data
+        //var parserObject.keyValueStore = {};
+        var keyValueMatch = /[^<\"_][a-zA-Z\#0-9]*[^\"\=\>]/g;
+        var keyValues = [];
+        for (var tag = 0; tag < parserObject.tags.length; tag++) {
+            keyValues = parserObject.tags[tag].match(keyValueMatch);
+            if (keyValues !== null) {
+                parserObject.keyValueStore[tag] = keyValues;
+            } else {
+                parserObject.keyValueStore[tag] = false;
+            }
+        }
+
+        // Create the triggers for the formatter
+        // var parserObject.triggers = [];
+        var triggerMatch = /[^_][\w\d\-\'\"\#]*/g;
+        var triggers = [];
+        var parserData = "";
+        var triggerOne = "";
+        var triggerTwo = "";
+        for (var data = 0; data < parserObject.data.length; data++) {
+            parserData = parserObject.data[data];
+            triggers = parserObject.data[data].match(triggerMatch);
+
+            if (triggers !== null) {
+                triggerOne = triggers[0].trim();
+                if (triggerOne.length === 1) {
+                    if (triggers[0].trim().length === 1) {
+                        parserData = parserData.replace(triggerOne, '');
+                        triggerTwo = parserData.trim();
+                        parserObject.triggers.push([[0, triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
+                    }
+                } else {
+                    triggerTwo = triggers[triggers.length - 1].trim();
+                    if (triggerTwo.length === 0) {
+                        parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
+                    } else {
+                        parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
+                    }
+                }
+            } else {
+                parserObject.triggers.push(false);
+            }
+        }
+
+        // Summary
+        lg(parserObject.tags);
         lg(parserObject.data);
         lg(parserObject.order);
+        lg(parserObject.keyValueStore);
+        lg(parserObject.triggers);
         lg("--------------------------------");
-        
-        
-        // Create key value store for formatting after parsing the data
-        //parserObject.keyValueStore
-        var keyValueMatch = /[a-z\=\"\#0-9]*/g;
-        
-        
-        
+
         return parserObject;
     }
 
@@ -272,17 +317,15 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         ci.translate(offsetX, offsetY);
 
         while (line < lines) {
-            parserData = [];
             var lineData = textLinesData[line];
 
-
             hasFormat = hasFormatCheck.test(lineData);
-            
+
             // Forcefull image detection workaround
-            if(lineData.indexOf("<img") !== -1) {
+            if (lineData.indexOf("<img") !== -1) {
                 hasFormat = true;
             }
-            
+
             if (hasFormat) {
                 var lineTags = lineData.match(tagMatchPattern);
                 //lg(lineTags);
@@ -290,7 +333,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 var current = 0;
                 while (current < lineTags.length) {
                     var parserObject = simpleParse(lineTags[current]);
-                    //lg(parserObject);
+                    lg(parserObject);
                     /*parserData.push();
                      lineData = lineData.replace(formatedParts[current], parserData[parserData.length - 1][2]);
                      parserData[current].splice(2, 1);
@@ -311,50 +354,50 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
             while (currentWord < wordCount) {
 
                 word = words[currentWord];
-                
+
                 // Set formatting for the text
                 /*
-                if (activeParser === -1) {
-                    parserItems = parserData.length;
+                 if (activeParser === -1) {
+                 parserItems = parserData.length;
 
-                    while (parserItems--) {
-                        var parserItem = parserData[parserItems];
-                        if (parserItem.length === 0) {
-                            continue;
-                        }
+                 while (parserItems--) {
+                 var parserItem = parserData[parserItems];
+                 if (parserItem.length === 0) {
+                 continue;
+                 }
 
-                        if (word === parserItem[2]) {
-                            activeParser = parserItems;
+                 if (word === parserItem[2]) {
+                 activeParser = parserItems;
 
-                            //ci.font = 'normal normal normal ' + fontWeight.trim() + ' ' + fontSize.toString() + 'px ' + fontFamily.trim();
-                            //ci.textAlign = "right";
-                            //ci.fillStyle = textColor;
-                            switch (parserItem[0]) {
+                 //ci.font = 'normal normal normal ' + fontWeight + ' ' + fontSize.toString() + 'px ' + fontFamily;
+                 //ci.textAlign = "right";
+                 //ci.fillStyle = textColor;
+                 switch (parserItem[0]) {
 
-                                case 'b':
-                                    ci.font = 'normal normal bold ' + fontSize.toString() + 'px ' + fontFamily.trim();
-                                    break;
-                                case 'i':
-                                    ci.font = 'italic normal normal ' + fontSize.toString() + 'px ' + fontFamily.trim();
-                                    break;
-                                case 'bi':
-                                    ci.font = 'italic normal bold ' + fontSize.toString() + 'px ' + fontFamily.trim();
-                                    break;
-                                case 'color':
-                                    ci.fillStyle = parserItem[1];
-                                    break
-                                default:
-                                    ci.font = fontWeight.trim() + ' ' + fontSize.toString() + 'px ' + fontFamily.trim();
-                                    break;
-                            }
+                 case 'b':
+                 ci.font = 'normal normal bold ' + fontSize.toString() + 'px ' + fontFamily;
+                 break;
+                 case 'i':
+                 ci.font = 'italic normal normal ' + fontSize.toString() + 'px ' + fontFamily;
+                 break;
+                 case 'bi':
+                 ci.font = 'italic normal bold ' + fontSize.toString() + 'px ' + fontFamily;
+                 break;
+                 case 'color':
+                 ci.fillStyle = parserItem[1];
+                 break
+                 default:
+                 ci.font = fontWeight + ' ' + fontSize.toString() + 'px ' + fontFamily;
+                 break;
+                 }
 
-                            break;
-                        }
+                 break;
+                 }
 
-                    }
+                 }
 
-                }
-                */
+                 }
+                 */
 
 
 
@@ -391,7 +434,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
                  parserData.splice(activeParser, 1);
 
-                 ci.font = fontWeight.trim() + ' ' + fontSize.toString() + 'px ' + fontFamily.trim();
+                 ci.font = fontWeight + ' ' + fontSize.toString() + 'px ' + fontFamily;
                  ci.textAlign = "left";
                  ci.fillStyle = textColor;
                  activeParser = -1;
