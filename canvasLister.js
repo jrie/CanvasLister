@@ -125,8 +125,8 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 continue;
             }
 
-            // If we have no closing tag.. this will skip an entry, but not brake something
-            // parse as much as possible
+            // If we have no closing tag.. this will skip an entry/entries
+            // TODO: parse as much as possible and simply add fictional closings
             if (closingIndex === -1) {
                 continue;
             }
@@ -158,9 +158,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                     } else {
                         parserObject.order.push(-1);
                     }
-                    //parserObject.order.push(-1);
                 }
-                //parserObject.order.push(tagOrder);
                 
                 formatData = formatData.substr(parserData.length);
                 tag--;
@@ -260,7 +258,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
     // Markup processor
     var hasFormatCheck = /<[^/]*>.*<\/>/g;
-    var commandPattern = /<[^/].*[<\/>]+/g;
+    var tagMatchPattern = /<[^/].*[<\/>]+/g;
     function processMarkup(textRawData) {
         var textLinesData = textRawData.trim().split('\n');
 
@@ -286,12 +284,12 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
             }
             
             if (hasFormat) {
-                var lineCommands = lineData.match(commandPattern);
-                //lg(lineCommands);
+                var lineTags = lineData.match(tagMatchPattern);
+                //lg(lineTags);
 
                 var current = 0;
-                while (current < lineCommands.length) {
-                    var parserObject = simpleParse(lineCommands[current]);
+                while (current < lineTags.length) {
+                    var parserObject = simpleParse(lineTags[current]);
                     //lg(parserObject);
                     /*parserData.push();
                      lineData = lineData.replace(formatedParts[current], parserData[parserData.length - 1][2]);
@@ -299,9 +297,6 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                      */
                     current++;
                 }
-
-                //lg(parserData);
-
             }
 
             var words = lineData.split(" ");
@@ -318,6 +313,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 word = words[currentWord];
                 
                 // Set formatting for the text
+                /*
                 if (activeParser === -1) {
                     parserItems = parserData.length;
 
@@ -328,7 +324,6 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                         }
 
                         if (word === parserItem[2]) {
-                            //lg(parserItem);
                             activeParser = parserItems;
 
                             //ci.font = 'normal normal normal ' + fontWeight.trim() + ' ' + fontSize.toString() + 'px ' + fontFamily.trim();
@@ -359,6 +354,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                     }
 
                 }
+                */
 
 
 
