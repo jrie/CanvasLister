@@ -266,8 +266,8 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         var triggerOne = "";
         var triggerTwo = "";
         for (var data = 0; data < parserObject.data.length; data++) {
-            parserData = parserObject.data[data];
-            triggers = parserObject.data[data].match(triggerMatch);
+            parserData = parserObject.data[data].trim();
+            triggers = parserData.match(triggerMatch);
 
             if (triggers !== null) {
                 triggerOne = triggers[0].trim();
@@ -279,7 +279,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                     }
                 } else {
                     triggerTwo = triggers[triggers.length - 1].trim();
-                    if (triggerTwo.length === 0) {
+                    if (triggerTwo.length === 0){
                         parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
                     } else {
                         parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
