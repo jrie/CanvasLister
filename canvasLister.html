@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CanvasLister - Work in Progress</title>
+    </head>
+    
+    <body style="background-color: #000;">
+		<canvas style="float: left; background-color:#000; margin: 12px;" id="canvasItem1" height="520" width="280"></canvas>
+                <canvas style="float: left; background-color:#000033; margin: 12px;" id="canvasItem2" height="490" width="550"></canvas>
+		<script type="text/javascript" src="canvasLister.js"></script>
+		<script type="text/javascript" src="canvasLister_simpleParse.js"></script>
+		<script type="text/javascript">
+                        // canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, backgroundColor, textColor, text)
+                        canvasLister_simpleParse("canvasItem1", "source1.txt", "Arial", "12", "normal", "#001125", "#dedede");
+                        canvasLister("canvasItem2", "source2.txt", "null", null, "normal", "#1a1a1a", "#00aa00");
+		</script>
+	</body>
+
+</html>
