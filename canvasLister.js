@@ -82,7 +82,9 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         dataLoader.send();
     }
 
-    var startMatch = /<[^\/][a-z0-9\s\=\"\#\'\*]*>/g;
+
+    // Matching tags and images for parser
+    var formatTagMatch = /<[^\/][\w\d\s\=\"\#\'\*]*>/g;
     var imgMatch = /<img[^<]*/g;
 
     function simpleParse(formatData) {
@@ -96,7 +98,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         parserObject.keyValueStore = {};
         parserObject.triggers = [];
 
-        // Preprocess and remove image from formatting data
+        // Preprocess and remove images from formatting data
         var imageData = formatData.match(imgMatch);
         if (imageData !== null) {
             parserObject.images = imageData;
@@ -107,7 +109,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         }
 
 
-        parserObject.tags = formatData.match(startMatch);
+        parserObject.tags = formatData.match(formatTagMatch);
 
         var parserData = "";
         var tagOrder = 0;
@@ -124,9 +126,11 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
             closingIndex = formatData.indexOf('</>');
 
             //lg(startIndex+" "+closingIndex)
-            if (startIndex === -1 && closingIndex === -1) {
-                continue;
-            }
+            /*
+             if (startIndex === -1 && closingIndex === -1) {
+             continue;
+             }
+             */
 
             // If we have no closing tag.. this will skip an entry/entries
             // TODO: parse as much as possible and simply add fictional closings
@@ -191,18 +195,17 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
             // Tag inside a tag
             if (startIndex < closingIndex) {
-                if (startIndex > 0) {
-                    parserData = formatData.substring(parserObject.tags[tag].length, startIndex);
-                    formatData = formatData.substr(startIndex);
-                    parserObject.data.push(parserData);
-                    parserObject.order.push(tagOrder);
-                    if (!hasOpenTag) {
-                        hasOpenTag = true;
-                        openTag = tagOrder;
-                    }
-                    tagOrder++;
+                parserData = formatData.substring(parserObject.tags[tag].length, startIndex);
+                formatData = formatData.substr(startIndex);
+                parserObject.data.push(parserData);
+                parserObject.order.push(tagOrder);
 
+                if (!hasOpenTag) {
+                    hasOpenTag = true;
+                    openTag = tagOrder;
                 }
+
+                tagOrder++;
             } else {
                 // Single tag element or closing, might be inside another tag
                 parserData = formatData.substring(parserObject.tags[tag].length, closingIndex);
@@ -247,10 +250,11 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
         // Create key value store for formatting after parsing the data
         //var parserObject.keyValueStore = {};
-        var keyValueMatch = /[^<\"_][a-zA-Z\#0-9]*[^\"\=\>]/g;
+        var keyValueMatch = /[^<\"\s]{1,}[\w\d\#]*[^\"\=\>\s]/g;
         var keyValues = [];
         for (var tag = 0; tag < parserObject.tags.length; tag++) {
             keyValues = parserObject.tags[tag].match(keyValueMatch);
+
             if (keyValues !== null) {
                 parserObject.keyValueStore[tag] = keyValues;
             } else {
@@ -272,14 +276,12 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
             if (triggers !== null) {
                 triggerOne = triggers[0].trim();
                 if (triggerOne.length === 1) {
-                    if (triggers[0].trim().length === 1) {
-                        parserData = parserData.replace(triggerOne, '');
-                        triggerTwo = parserData.trim();
-                        parserObject.triggers.push([[0, triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
-                    }
+                    parserData = parserData.replace(triggerOne, '');
+                    triggerTwo = parserData.trim();
+                    parserObject.triggers.push([[0, triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
                 } else {
                     triggerTwo = triggers[triggers.length - 1].trim();
-                    if (triggerTwo.length === 0){
+                    if (triggerTwo.length === 0) {
                         parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
                     } else {
                         parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
