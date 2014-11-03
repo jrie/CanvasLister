@@ -1,7 +1,7 @@
-"use strict";
+'use strict';
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
 
-var hasConsole = typeof (window.console) !== "undefined" ? true : false;
+var hasConsole = typeof (window.console) !== undefined ? true : false;
 
 function lg(msg) {
     if (hasConsole) {
@@ -11,17 +11,17 @@ function lg(msg) {
 
 //canvasLister("canvasItem1", "source1.txt", null, null, "#000", "bold", "#00aa00");
 //canvasLister("canvasItem2", "source1.txt", "Lithos Pro", "16", null, "#000033", "#dedede");
-function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, backgroundColor, textColor, text) {
+function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, text) {
 
     // The allowed attributes and there types (0 = Num, 1 = Hex, 2 = Text)
     var attributes = {
-        "size": 0,
-        "color": 1,
-        "align": 2
+        'size': 0,
+        'color': 1,
+        'align': 2
     };
 
-    var validTexts = ["left", "right", "center"];
-    var validUnits = ["px", "%"];
+    var validTexts = ['left', 'right', 'center'];
+    var validUnits = ['px']; // %;
     var matchHex = /#[0-9a-f]*/gi;
 
     // Performs checks if a given keyValuePair is valid to some ruleset
@@ -121,13 +121,13 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
     // Get 2d context when present and measurements
     var ci = canvas.getContext('2d');
     var offsetX = 10;
-    var offsetY = 20;
+    var offsetY = 10;
     var sizeX = canvas.width - (offsetX * 2);
     var sizeY = canvas.height - (offsetY * 2);
 
     // Check whether a sourcefile is given and if text then is provided which is required
     if (sourceFile === null) {
-        if (typeof (text) === "undefined") {
+        if (typeof (text) === undefined) {
             lg('Source file is not provided, but no text either, canvas item id "' + canvasItem + '"');
             return;
         }
@@ -141,41 +141,44 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         backgroundColor = '#fff';
     }
 
-    if (fontFamily === null) {
-        fontFamily = "sans-serif";
+    if (fontDefaultFamily === null) {
+        fontDefaultFamily = 'sans-serif';
     }
 
-    if (fontSize === null) {
-        fontSize = 11;
+    if (fontDefaultSize === null) {
+        fontDefaultSize = '11px';
     }
 
-    if (fontWeight === null) {
-        fontWeight = "normal";
+    var fontDefaultLineHeight = parseFloat(fontDefaultSize)+4;
+    
+    if (fontDefaultWeight === null) {
+        fontDefaultWeight = 'normal';
     }
 
-    if (textColor === null) {
-        textColor = '#000';
+    if (fontDefaultColor === null) {
+        fontDefaultColor = '#000';
     }
 
-    fontWeight = fontWeight.trim();
-    fontFamily = fontFamily.trim();
+    if (fontDefaultShape === null) {
+        fontDefaultShape = 'normal';
+    }
 
-    ci.font = fontWeight + ' ' + fontSize.toString() + 'px ' + fontFamily;
-    ci.textAlign = "left";
-    ci.fillStyle = textColor;
+    ci.font = fontDefaultShape+' normal '+fontDefaultWeight + ' ' + fontDefaultSize + ' ' + fontDefaultFamily;
+    ci.fillStyle = fontDefaultColor;
+    ci.textAlign = 'left';
 
-    var rawData = '';
+    var markupData = '';
 
     // Textloader using ajax
     function loadText() {
         var dataLoader = new XMLHttpRequest();
         dataLoader.onreadystatechange = function () {
             if (dataLoader.readyState === 4) {
-                rawData = dataLoader.responseText;
-                processMarkup(rawData);
+                markupData = dataLoader.responseText;
+                processMarkup(markupData);
             }
         };
-        dataLoader.open("GET", sourceFile);
+        dataLoader.open('GET', sourceFile);
         dataLoader.send();
     }
 
@@ -189,22 +192,24 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
     var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
 
     function simpleParse(formatData) {
-        lg("---parser data------------------");
+        //lg('---parser data------------------');
 
         var parserObject = {};
         parserObject.data = [];
         parserObject.tags = [];
         parserObject.imageStore = [];
         parserObject.imageTagStore = [];
-        parserObject.order = [];
+        parserObject.orders = [];
         parserObject.tagStore = {};
-        parserObject.tagFormatStore = {};
+        parserObject.tagKeyValues = {};
         parserObject.triggers = [];
 
         // Preprocess and remove image tag from formatting data, prepare image data
+        
         var imageData = formatData.match(imgMatch);
         var imageOrder = -3;
         var keyValues = [];
+        
 
         if (imageData !== null) {
             parserObject.imageTagStore = imageData;
@@ -218,15 +223,15 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
                 // Create the general image object
                 var imageObject = {};
-                imageObject.title = "";
-                imageObject.description = "";
-                imageObject.fg = "#000000";
-                imageObject.bg = "#ffffff";
-                imageObject.src = "none";
-                imageObject.height = "0px";
-                imageObject.width = "0px";
+                imageObject.title = '';
+                imageObject.description = '';
+                imageObject.fg = '#000000';
+                imageObject.bg = '#ffffff';
+                imageObject.src = 'none';
+                imageObject.height = '0px';
+                imageObject.width = '0px';
                 imageObject.id = imageOrder;
-
+                               
                 // Clean imageTag from format data
                 formatData = formatData.replace(imageTag, '');
 
@@ -236,24 +241,24 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 // Check if we can get a title and remove it from the imageTag
                 imgTitle = imageTag.match(imgTitleMatch);
                 if (imgTitle !== null) {
-                    imageObject.title = imgTitle[0].split("=", 2)[1];
+                    imageObject.title = imgTitle[0].split('=', 2)[1];
                     imageTag = imageTag.replace(imgTitleMatch, '');
                 }
 
                 // Check if we can get a description and remove it from imageTag
                 imgDescription = imageTag.match(imgDescriptionMatch);
                 if (imgDescription !== null) {
-                    imageObject.description = imgDescription[0].split("=", 2)[1];
+                    imageObject.description = imgDescription[0].split('=', 2)[1];
                     imageTag = imageTag.replace(imgDescriptionMatch, '');
                 }
 
-                keyValues = imageTag.match(keyValueMatch);
+                keyValues = imageTag.match(imgkeyValueMatch);
                 if (keyValues !== null) {
                     for (var keyValue = 0; keyValue < keyValues.length; keyValue += 2) {
                         imageObject[keyValues[keyValue]] = keyValues[keyValue + 1];
                     }
 
-                    parserObject.order.push(imageOrder);
+                    parserObject.orders.push(imageOrder);
                     parserObject.imageStore.push(imageObject);
                 } else {
                     // If we only get a image without any attributes we skip it
@@ -267,23 +272,29 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         }
 
 
-        parserObject.tags = formatData.match(formatTagMatch);
-
-        var parserData = "";
+        var parserData = '';
         var tagOrder = 0;
-        var tagLength = parserObject.tags.length;
-
+        var tagLength = 0;
+        
         var startIndex = 0;
         var closingIndex = 0;
         var hasOpenTag = false;
         var openTag = 0;
+        
+        parserObject.tags = formatData.match(formatTagMatch);
+
+        if (parserObject.tags !== null) {
+            tagLength = parserObject.tags.length;
+        } else {
+            parserObject.tags = [];
+        }
 
         for (var tag = 0; tag < tagLength; tag++) {
 
             startIndex = formatData.indexOf(parserObject.tags[tag + 1]);
             closingIndex = formatData.indexOf('</>');
 
-            //lg(startIndex+" "+closingIndex)
+            //lg(startIndex+' '+closingIndex)
             /*
              if (startIndex === -1 && closingIndex === -1) {
              continue;
@@ -300,7 +311,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
             if (startIndex === -1 && formatData.indexOf(parserObject.tags[tag]) === 0) {
                 parserData = formatData.substr(parserObject.tags[tag].length, closingIndex - parserObject.tags[tag].length);
                 parserObject.data.push(parserData);
-                parserObject.order.push(tag);
+                parserObject.orders.push(tag);
                 continue;
             }
 
@@ -316,12 +327,12 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
                 parserObject.data.push(parserData);
                 if (hasOpenTag) {
-                    parserObject.order.push(parserObject.tags.indexOf(parserObject.tags[tag]));
+                    parserObject.orders.push(parserObject.tags.indexOf(parserObject.tags[tag]));
                 } else {
                     if (startIndex === -1 && formatData.indexOf(parserObject.tags[tag]) > 0) {
-                        parserObject.order.push(openTag - 1);
+                        parserObject.orders.push(openTag - 1);
                     } else {
-                        parserObject.order.push(-1);
+                        parserObject.orders.push(-1);
                     }
                 }
 
@@ -342,7 +353,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                     parserData = formatData.substring(0, formatData.indexOf(parserObject.tags[tag]));
                 }
                 parserObject.data.push(parserData);
-                parserObject.order.push(tagOrder);
+                parserObject.orders.push(tagOrder);
                 formatData = formatData.substr(closingIndex + 3);
 
                 tagOrder--;
@@ -356,7 +367,7 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 parserData = formatData.substring(parserObject.tags[tag].length, startIndex);
                 formatData = formatData.substr(startIndex);
                 parserObject.data.push(parserData);
-                parserObject.order.push(tagOrder);
+                parserObject.orders.push(tagOrder);
 
                 if (!hasOpenTag) {
                     hasOpenTag = true;
@@ -372,16 +383,16 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 formatData = formatData.substr(closingIndex + 3);
 
                 if (hasOpenTag) {
-                    parserObject.order.push(tagOrder);
+                    parserObject.orders.push(tagOrder);
                     hasOpenTag = false;
                 } else {
-                    parserObject.order.push(parserObject.tags.indexOf(parserObject.tags[tag]));
+                    parserObject.orders.push(parserObject.tags.indexOf(parserObject.tags[tag]));
                 }
 
                 while (tagOrder-- > openTag) {
                     formatData = formatData.replace('</>', '');
                     /*
-                     parserObject.order.push(tagOrder);
+                     parserObject.orders.push(tagOrder);
                      parserObject.data.push('');
                      */
                 }
@@ -389,8 +400,9 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         }
 
         // Merge duplicated tags and rewrite order points
+        /*
         tagLength = parserObject.tags.length;
-        var tagOrders = parserObject.order.length;
+        var tagOrders = parserObject.orders.length;
         var currentTag = parserObject.tags[0];
         var subTag = 0;
         var orderItem = 0;
@@ -398,8 +410,8 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
             for (subTag = tag + 1; subTag < tagLength; subTag++) {
                 if (currentTag === parserObject.tags[subTag]) {
                     for (orderItem = 0; orderItem < tagOrders; orderItem++) {
-                        if (subTag === parserObject.order[orderItem]) {
-                            parserObject.order[orderItem] = tag;
+                        if (subTag === parserObject.orders[orderItem]) {
+                            parserObject.orders[orderItem] = tag;
                         }
                     }
 
@@ -411,9 +423,10 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
             currentTag = parserObject.tags[tag];
         }
+        */
 
         // Create key value store for formatting after parsing the data
-        //var parserObject.tagFormatStore = {};
+        //var parserObject.tagKeyValues = {};
         var keyValues = [];
         var singleKey = [];
         var keyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
@@ -427,7 +440,8 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
             if (singleKey !== null) {
                 parserObject.tagStore[tag] = singleKey[0];
             } else {
-                parserObject.tagStore[tag] = false;
+                // Push an empty string to tell that we have no simple tag value
+                parserObject.tagStore[tag] = '';
             }
 
             if (keyValues !== null) {
@@ -438,9 +452,9 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                     }
                 }
 
-                parserObject.tagFormatStore[tag] = permittedKeyValues;
+                parserObject.tagKeyValues[tag] = permittedKeyValues;
             } else {
-                parserObject.tagFormatStore[tag] = [];
+                parserObject.tagKeyValues[tag] = [];
             }
 
 
@@ -450,9 +464,9 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         // var parserObject.triggers = [];
         var triggerMatch = /[^_][\w\d\-\'\"\#]*/g;
         var triggers = [];
-        var parserData = "";
-        var triggerOne = "";
-        var triggerTwo = "";
+        var parserData = '';
+        var triggerOne = '';
+        var triggerTwo = '';
         for (var data = 0; data < parserObject.data.length; data++) {
             parserData = parserObject.data[data].trim();
             triggers = parserData.match(triggerMatch);
@@ -477,11 +491,12 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         }
 
         // Summary
+        /*
         lg(parserObject.tags);
         lg(parserObject.data);
-        lg(parserObject.order);
+        lg(parserObject.orders);
         lg(parserObject.tagStore);
-        lg(parserObject.tagFormatStore);
+        lg(parserObject.tagKeyValues);
 
         if (parserObject.imageTagStore.length !== 0) {
             lg(parserObject.imageStore);
@@ -489,154 +504,244 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         }
 
         lg(parserObject.triggers);
-        lg("---object-----------------------");
+        lg('---object-----------------------');
         lg(parserObject);
-        lg(" ");
-        lg("  ");
-
+        lg(' ');
+        lg('  ');
+        */
         return parserObject;
     }
 
     // Markup processor
     var hasFormatCheck = /<[^/]*>.*<\/>/g;
     var tagMatchPattern = /<[^<\s]{0,}.*[<\/>]+/g;
-    function processMarkup(rawData) {
-        var textLinesData = rawData.trim().split('\n');
+    var closingMatch = /<\/>/g;
+    function processMarkup(markupData) {
+        var markupParts = markupData.trim().split('\n');
 
         var line = 0;
-        var lines = textLinesData.length - 1;
+        var lines = markupParts.length - 1;
         var stepY = 0;
         var stepX = 0;
+        var spacerSize = 0;
         var hasFormat = false;
-        var parserData = [];
+        var parserObjectStore = [];
 
         ci.translate(offsetX, offsetY);
-
+        
+        var activeLine = '';
+        
         while (line < lines) {
-            var lineData = textLinesData[line];
+            activeLine = markupParts[line];
 
-            hasFormat = hasFormatCheck.test(lineData);
-
-            // Forcefull image detection workaround
-            if (lineData.indexOf("<img") !== -1) {
+            hasFormat = hasFormatCheck.test(activeLine);
+            
+            // Forcefull image detection
+            if (activeLine.match(imgMatch) !== null) {
                 hasFormat = true;
             }
 
             if (hasFormat) {
-                var lineTags = lineData.match(tagMatchPattern);
-                //lg(lineTags);
-
-                var current = 0;
-                while (current < lineTags.length) {
-                    var parserObject = simpleParse(lineTags[current]);
-                    /*parserData.push();
-                     lineData = lineData.replace(formatedParts[current], parserData[parserData.length - 1][2]);
-                     parserData[current].splice(2, 1);
-                     */
-                    current++;
+                var parserObject = simpleParse( activeLine.match(tagMatchPattern)[0] );
+                parserObjectStore.push(parserObject);
+                lg(parserObject);
+                
+                // Start cleaning up the linedata by clearing tags
+                for (var tag = 0; tag < parserObject.tags.length; tag++) {
+                    activeLine = activeLine.replace(parserObject.tags[tag], '');
                 }
+                
+                // Clean up image definitions
+                for (var image = 0; image < parserObject.imageTagStore.length; image++) {
+                    activeLine = activeLine.replace(parserObject.imageTagStore[image], '');
+                }
+                
+                // Clean up closings
+                activeLine = activeLine.replace(closingMatch, '');
             }
 
-            var words = lineData.split(" ");
+            var words = activeLine.split(' ');
             var wordCount = words.length;
+            
             var currentWord = 0;
-            var word = '';
             var currentSize = 0;
-            var parserItems = 0;
-            var activeParser = -1;
-            var wordSet = false;
+            var word = '';
+            
+            
+            // The formatter level and formatter switch
+            var formatLevel = -1;
+            var useFormat = parserObject.tags.length !== 0 ? true : false;
+            var openTags = [];
+            
+            // Shorthands for the parserObject data
+            var tagStore = parserObject.tagStore;
+            var tagKeyValues = parserObject.tagKeyValues;
+            var triggers = parserObject.triggers;
+            var orders = parserObject.orders;
+            
+            // Sizes for looping
+            var triggerSize = parserObject.triggers.length;
+            var orderSize = parserObject.orders.length;
+            
+            var trigger = 0;
+            var order = 0;
+            var simpleTag = '';
+            var keyValues = [];
+            
 
+            // Reset to default values
+            var fontWeight = fontDefaultWeight;
+            var fontSize = fontDefaultSize;
+            var fontColor = fontDefaultColor;
+            var fontFamily = fontDefaultFamily;
+            var fontShape = fontDefaultShape;
+            var fontLineHeight = fontDefaultLineHeight;
+            
+            var lineHeightHint = fontLineHeight;
+            
+            var fontStyle = [fontShape, 'normal', fontWeight, fontDefaultSize, fontDefaultFamily];
+            var wordSize = 0;
+            
             while (currentWord < wordCount) {
 
                 word = words[currentWord];
+                
+                if (useFormat) {
+                    trigger = triggerSize;
+                    while (trigger--) {
+                        if ( triggers[trigger] === false || word === triggers[trigger][0][1]) {
+                            formatLevel = trigger;
+                            
+                            // Get key value formatting or empty array
+                            keyValues = [];
+                            if (tagKeyValues.hasOwnProperty(formatLevel)) {
+                                keyValues = tagKeyValues[formatLevel];
+                            }
+                            
+                            simpleTag = tagStore[formatLevel];
+                            
+                            // Check if we have a simple tag to start with
+                            if (simpleTag !== '') {
+                                switch (simpleTag) {
+                                    case 'b':
+                                        fontWeight = 'bold';
+                                        break;
+                                    case 'i':
+                                        fontShape = 'italic';
+                                        break;
+                                    case 'bi':
+                                        fontWeight = 'bold';
+                                        fontShape = 'italic';
+                                        break;
+                                }
+                                
+                                fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
+                                ci.font = fontStyle.join(' ');
+                            }
+                            
+                            if (keyValues.length !== 0) {
+                                for (var keyItem = 0; keyItem < keyValues.length; keyItem++) {
+                                    switch (keyValues[keyItem][0]) {
+                                        case "size":
+                                            fontSize = keyValues[keyItem][1];
+                                            lineHeightHint = parseFloat(fontSize)+4;
+                                            
+                                            if (fontLineHeight < lineHeightHint) {
+                                                fontLineHeight = lineHeightHint;
+                                            }
+                                            
+                                            break;
+                                        case "color":
+                                            fontColor = keyValues[keyItem][1];
+                                            ci.fillStyle = fontColor;
+                                            break;
+                                    }
+                                }
+                                
+                                fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
+                                ci.font = fontStyle.join(' ');
+                            }
+                        }
+                    }
+                }
 
-                // Set formatting for the text
-                /*
-                 if (activeParser === -1) {
-                 parserItems = parserData.length;
 
-                 while (parserItems--) {
-                 var parserItem = parserData[parserItems];
-                 if (parserItem.length === 0) {
-                 continue;
-                 }
-
-                 if (word === parserItem[2]) {
-                 activeParser = parserItems;
-
-                 //ci.font = 'normal normal normal ' + fontWeight + ' ' + fontSize.toString() + 'px ' + fontFamily;
-                 //ci.textAlign = "right";
-                 //ci.fillStyle = textColor;
-                 switch (parserItem[0]) {
-
-                 case 'b':
-                 ci.font = 'normal normal bold ' + fontSize.toString() + 'px ' + fontFamily;
-                 break;
-                 case 'i':
-                 ci.font = 'italic normal normal ' + fontSize.toString() + 'px ' + fontFamily;
-                 break;
-                 case 'bi':
-                 ci.font = 'italic normal bold ' + fontSize.toString() + 'px ' + fontFamily;
-                 break;
-                 case 'color':
-                 ci.fillStyle = parserItem[1];
-                 break
-                 default:
-                 ci.font = fontWeight + ' ' + fontSize.toString() + 'px ' + fontFamily;
-                 break;
-                 }
-
-                 break;
-                 }
-
-                 }
-
-                 }
-                 */
-
-
-
-
-
-                var nextSize = currentSize + Math.ceil(ci.measureText(word + ' ').width);
+                // Layout and draw the text
+                wordSize =  Math.ceil(ci.measureText(word).width);
+                spacerSize = Math.ceil(ci.measureText(' ').width); 
+                var nextSize = currentSize + wordSize;
 
                 if (nextSize > sizeX) {
-                    stepY += 18;
+                    stepY += lineHeightHint;
                     stepX = 0;
                     currentSize = 0;
-                    wordSet = false;
                 } else {
                     currentWord++;
-                    ci.fillText(word, stepX, stepY);
-                    stepX += Math.ceil(ci.measureText(word + ' ').width);
+                    ci.fillText(word, stepX, stepY+fontLineHeight);
+                    stepX += (wordSize+spacerSize);
                     currentSize = stepX;
-                    wordSet = true;
-
                 }
 
                 if (currentWord === wordCount) {
-                    stepY += 18;
+                    stepY += fontDefaultLineHeight;
                     stepX = 0;
+                    
                 }
 
 
-                // Get out of formatting
-                // parserItems is already set
-                /*
-                 if (wordSet && activeParser !== -1) {
-                 parserItem = parserData[activeParser];
-                 if (word === parserItem[3] || word.substr(0, word.length-1) === parserItem[3]) {
+                // Change formatting if required
+                if (useFormat) {
+                    if (formatLevel === -1) {
+                        continue;
+                    }
+                    if ( triggers[formatLevel] === false || word === triggers[formatLevel][1][1]) {
 
-                 parserData.splice(activeParser, 1);
+                        // Get key value formatting or empty array
+                        keyValues = [];
+                        if (tagKeyValues.hasOwnProperty(formatLevel)) {
+                            keyValues = tagKeyValues[formatLevel];
+                        }
 
-                 ci.font = fontWeight + ' ' + fontSize.toString() + 'px ' + fontFamily;
-                 ci.textAlign = "left";
-                 ci.fillStyle = textColor;
-                 activeParser = -1;
-                 }
-                 }
-                 */
+                        simpleTag = tagStore[formatLevel];
 
+                        // Check if we have a simple tag to start with
+                        if (simpleTag !== '') {
+                            switch (simpleTag) {
+                                case 'b':
+                                    fontWeight = fontDefaultWeight;
+                                    break;
+                                case 'i':
+                                    fontShape = fontDefaultShape;
+                                    break;
+                                case 'bi':
+                                    fontWeight = fontDefaultWeight;
+                                    fontShape = fontDefaultShape;
+                                    break;
+                            }
+
+                            fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
+                            ci.font = fontStyle.join(' ');
+                        }
+
+                        if (keyValues.length !== 0) {
+                            for (var keyItem = 0; keyItem < keyValues.length; keyItem++) {
+                                switch (keyValues[keyItem][0]) {
+                                    case "size":
+                                        fontSize = fontDefaultSize;
+                                        lineHeightHint = fontDefaultLineHeight;
+
+                                        break;
+                                    case "color":
+                                        ci.fillStyle = fontDefaultColor;
+                                        break;
+                                }
+                            }
+                            
+                            fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
+                            ci.font = fontStyle.join(' ');
+                        }
+                    }
+                }
             }
 
             line++;
