@@ -13,6 +13,103 @@ function lg(msg) {
 //canvasLister("canvasItem2", "source1.txt", "Lithos Pro", "16", null, "#000033", "#dedede");
 function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, backgroundColor, textColor, text) {
 
+    // The allowed attributes and there types (0 = Num, 1 = Hex, 2 = Text)
+    var attributes = {
+        "size": 0,
+        "color": 1,
+        "align": 2
+    };
+
+    var validTexts = ["left", "right", "center"];
+    var validUnits = ["px", "%"];
+    var matchHex = /#[0-9a-f]*/gi;
+
+    // Performs checks if a given keyValuePair is valid to some ruleset
+    // returns false if something is wrong or missing
+    function checkKeyValuePair(keyValuePair) {
+        var key = keyValuePair[0];
+        var value = keyValuePair[1];
+
+        var attribute = attributes[key];
+        if (attribute === undefined) {
+            return false;
+        }
+
+        switch (attribute) {
+            case 0:
+                if (isValidNum(value)) {
+                    if (isValidUnit(value)) {
+                        return true;
+                    }
+                }
+                break;
+            case 1:
+                if (isValidHex(value)) {
+                    return true;
+                }
+                break;
+            case 2:
+                if (isValidText(value)) {
+                    return true;
+                }
+                break;
+        }
+
+        return false;
+    }
+
+
+    // Helper functions to check if userinput is valid
+    function isValidNum(input) {
+        if (Number.isNaN(parseInt(input))) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    function isValidHex(input) {
+        if (input[0] !== '#') {
+            return false;
+        }
+
+        var hexMatch = input.match(matchHex)[0];
+
+        if (hexMatch.length > 7) {
+            return false;
+        }
+
+        if (hexMatch.length < 4) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function isValidText(input) {
+        if (validTexts.indexOf(input) !== -1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function isValidUnit(input) {
+        if (input.length < 3) {
+            return false;
+        }
+
+        for (var unit = 0; unit < validUnits.length; unit++) {
+            if (input.indexOf(validUnits[unit]) !== -1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     var canvas = document.getElementById(canvasItem);
 
     // Checking canvas presence
@@ -67,15 +164,15 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
     ci.textAlign = "left";
     ci.fillStyle = textColor;
 
-    var textRawData = '';
+    var rawData = '';
 
     // Textloader using ajax
     function loadText() {
         var dataLoader = new XMLHttpRequest();
         dataLoader.onreadystatechange = function () {
             if (dataLoader.readyState === 4) {
-                textRawData = dataLoader.responseText;
-                processMarkup(textRawData);
+                rawData = dataLoader.responseText;
+                processMarkup(rawData);
             }
         };
         dataLoader.open("GET", sourceFile);
@@ -83,28 +180,89 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
     }
 
 
-    // Matching tags and images for parser
-    var formatTagMatch = /<[^\/][\w\d\s\=\"\#\'\*]*>/g;
+    // Matching tags and imageTagStore for parser
+    var formatTagMatch = /<[^\/][\w\d\s\=\"\#\'\*\%]*>/g;
     var imgMatch = /<img[^<]*/g;
+    var imgReplace = /\bimg\b/g;
+    var imgTitleMatch = /title=[\"\'][^\"]*[\"\']{1,2}/gi;
+    var imgDescriptionMatch = /description=[\"\'][^\"]*[\"\']{1,2}/gi;
+    var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
 
     function simpleParse(formatData) {
-        lg("--------PARSER DATA-------------");
+        lg("---parser data------------------");
 
         var parserObject = {};
         parserObject.data = [];
         parserObject.tags = [];
-        parserObject.images = [];
+        parserObject.imageStore = [];
+        parserObject.imageTagStore = [];
         parserObject.order = [];
-        parserObject.keyValueStore = {};
+        parserObject.tagStore = {};
+        parserObject.tagFormatStore = {};
         parserObject.triggers = [];
 
-        // Preprocess and remove images from formatting data
+        // Preprocess and remove image tag from formatting data, prepare image data
         var imageData = formatData.match(imgMatch);
+        var imageOrder = -3;
+        var keyValues = [];
+
         if (imageData !== null) {
-            parserObject.images = imageData;
+            parserObject.imageTagStore = imageData;
+            var imageTag = [];
+
+            var imgTitle = [];
+            var imgDescription = [];
+
             for (var img = 0; img < imageData.length; img++) {
-                formatData = formatData.replace(imageData[img], '');
-                parserObject.order.push(-3);
+                imageTag = imageData[img];
+
+                // Create the general image object
+                var imageObject = {};
+                imageObject.title = "";
+                imageObject.description = "";
+                imageObject.fg = "#000000";
+                imageObject.bg = "#ffffff";
+                imageObject.src = "none";
+                imageObject.height = "0px";
+                imageObject.width = "0px";
+                imageObject.id = imageOrder;
+
+                // Clean imageTag from format data
+                formatData = formatData.replace(imageTag, '');
+
+                // Clean imageTag from format data
+                imageTag = imageTag.replace(imgReplace, '');
+
+                // Check if we can get a title and remove it from the imageTag
+                imgTitle = imageTag.match(imgTitleMatch);
+                if (imgTitle !== null) {
+                    imageObject.title = imgTitle[0].split("=", 2)[1];
+                    imageTag = imageTag.replace(imgTitleMatch, '');
+                }
+
+                // Check if we can get a description and remove it from imageTag
+                imgDescription = imageTag.match(imgDescriptionMatch);
+                if (imgDescription !== null) {
+                    imageObject.description = imgDescription[0].split("=", 2)[1];
+                    imageTag = imageTag.replace(imgDescriptionMatch, '');
+                }
+
+                keyValues = imageTag.match(keyValueMatch);
+                if (keyValues !== null) {
+                    for (var keyValue = 0; keyValue < keyValues.length; keyValue += 2) {
+                        imageObject[keyValues[keyValue]] = keyValues[keyValue + 1];
+                    }
+
+                    parserObject.order.push(imageOrder);
+                    parserObject.imageStore.push(imageObject);
+                } else {
+                    // If we only get a image without any attributes we skip it
+                    // for now
+                    // TODO: Use default styling for a blank image reference
+                    continue;
+                }
+
+                imageOrder--;
             }
         }
 
@@ -222,6 +380,10 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
 
                 while (tagOrder-- > openTag) {
                     formatData = formatData.replace('</>', '');
+                    /*
+                     parserObject.order.push(tagOrder);
+                     parserObject.data.push('');
+                     */
                 }
             }
         }
@@ -229,15 +391,15 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         // Merge duplicated tags and rewrite order points
         tagLength = parserObject.tags.length;
         var tagOrders = parserObject.order.length;
-
-        for (var tag = 0; tag < tagLength; tag++) {
-            var currentTag = parserObject.tags[tag];
-
-            for (var subTag = tag + 1; subTag < tagLength; subTag++) {
+        var currentTag = parserObject.tags[0];
+        var subTag = 0;
+        var orderItem = 0;
+        for (var tag = 1; tag < tagLength; tag++) {
+            for (subTag = tag + 1; subTag < tagLength; subTag++) {
                 if (currentTag === parserObject.tags[subTag]) {
-                    for (var item = 0; item < tagOrders; item++) {
-                        if (subTag === parserObject.order[item]) {
-                            parserObject.order[item] = tag;
+                    for (orderItem = 0; orderItem < tagOrders; orderItem++) {
+                        if (subTag === parserObject.order[orderItem]) {
+                            parserObject.order[orderItem] = tag;
                         }
                     }
 
@@ -246,20 +408,42 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                     tag--;
                 }
             }
+
+            currentTag = parserObject.tags[tag];
         }
 
         // Create key value store for formatting after parsing the data
-        //var parserObject.keyValueStore = {};
-        var keyValueMatch = /[^<\"\s]{1,}[\w\d\#]*[^\"\=\>\s]/g;
+        //var parserObject.tagFormatStore = {};
         var keyValues = [];
+        var singleKey = [];
+        var keyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
+        var singleValueMatch = /\b[b|i|bi]{1,2}\b/gi;
+        var permittedKeyValues = [];
+
         for (var tag = 0; tag < parserObject.tags.length; tag++) {
             keyValues = parserObject.tags[tag].match(keyValueMatch);
+            singleKey = parserObject.tags[tag].match(singleValueMatch);
+
+            if (singleKey !== null) {
+                parserObject.tagStore[tag] = singleKey[0];
+            } else {
+                parserObject.tagStore[tag] = false;
+            }
 
             if (keyValues !== null) {
-                parserObject.keyValueStore[tag] = keyValues;
+                permittedKeyValues = [];
+                for (var keyValue = 0; keyValue < keyValues.length; keyValue += 2) {
+                    if (checkKeyValuePair([keyValues[keyValue], keyValues[keyValue + 1]])) {
+                        permittedKeyValues.push([keyValues[keyValue], keyValues[keyValue + 1]]);
+                    }
+                }
+
+                parserObject.tagFormatStore[tag] = permittedKeyValues;
             } else {
-                parserObject.keyValueStore[tag] = false;
+                parserObject.tagFormatStore[tag] = [];
             }
+
+
         }
 
         // Create the triggers for the formatter
@@ -296,18 +480,28 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
         lg(parserObject.tags);
         lg(parserObject.data);
         lg(parserObject.order);
-        lg(parserObject.keyValueStore);
+        lg(parserObject.tagStore);
+        lg(parserObject.tagFormatStore);
+
+        if (parserObject.imageTagStore.length !== 0) {
+            lg(parserObject.imageStore);
+            lg(parserObject.imageTagStore);
+        }
+
         lg(parserObject.triggers);
-        lg("--------------------------------");
+        lg("---object-----------------------");
+        lg(parserObject);
+        lg(" ");
+        lg("  ");
 
         return parserObject;
     }
 
     // Markup processor
     var hasFormatCheck = /<[^/]*>.*<\/>/g;
-    var tagMatchPattern = /<[^/].*[<\/>]+/g;
-    function processMarkup(textRawData) {
-        var textLinesData = textRawData.trim().split('\n');
+    var tagMatchPattern = /<[^<\s]{0,}.*[<\/>]+/g;
+    function processMarkup(rawData) {
+        var textLinesData = rawData.trim().split('\n');
 
         var line = 0;
         var lines = textLinesData.length - 1;
@@ -335,7 +529,6 @@ function canvasLister(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, 
                 var current = 0;
                 while (current < lineTags.length) {
                     var parserObject = simpleParse(lineTags[current]);
-                    lg(parserObject);
                     /*parserData.push();
                      lineData = lineData.replace(formatedParts[current], parserData[parserData.length - 1][2]);
                      parserData[current].splice(2, 1);
