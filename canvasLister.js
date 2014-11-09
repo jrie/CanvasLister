@@ -295,18 +295,18 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         for (var tag = 0; tag < tagLength; tag++) {
 
             currentTag = parserObject.tags[tag];
-            nextTag = parserObject.tags[tag+1];
+            nextTag = parserObject.tags[tag + 1];
 
             currentIndex = formatData.indexOf(currentTag);
             nextIndex = formatData.indexOf(nextTag);
             closingIndex = formatData.indexOf('</>');
 
             if (closingIndex === 0) {
-                formatData = formatData.substr(closingIndex+3);
+                formatData = formatData.substr(closingIndex + 3);
                 currentIndex = formatData.indexOf(currentTag);
                 nextIndex = formatData.indexOf(nextTag);
                 closingIndex = formatData.indexOf('</>');
-                openTags.splice(openTags.length-1, 1);
+                openTags.splice(openTags.length - 1, 1);
             }
 
             //lg('tag: '+currentTag);
@@ -324,7 +324,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                     parserData = formatData.substring(0, closingIndex);
                     parserObject.data.push(parserData);
                     parserObject.orders.push(openTags[0]);
-                    formatData = formatData.substr(closingIndex+3);
+                    formatData = formatData.substr(closingIndex + 3);
                 }
 
                 openTags = [];
@@ -333,9 +333,9 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
             }
 
             // Last tag processing
-            if(nextIndex === -1) {
+            if (nextIndex === -1) {
                 parserData = formatData.substring(currentTag.length, closingIndex);
-                formatData = formatData.substr(closingIndex+3);
+                formatData = formatData.substr(closingIndex + 3);
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
                 processedTags++;
@@ -348,18 +348,18 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
                 if (openTags.length === 0) {
                     parserData = formatData.substring(currentTag.length, closingIndex);
-                    formatData = formatData.substr(closingIndex+3);
+                    formatData = formatData.substr(closingIndex + 3);
 
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
                 } else {
                     parserData = formatData.substring(currentTag.length, closingIndex);
-                    formatData = formatData.substr(closingIndex+3);
+                    formatData = formatData.substr(closingIndex + 3);
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
 
-                    formatData = formatData.substr((openTags.length-1)*3);
-                    openTags = openTags.slice(openTags.length-1, 1);
+                    formatData = formatData.substr((openTags.length - 1) * 3);
+                    openTags = openTags.slice(openTags.length - 1, 1);
                 }
 
                 processedTags++;
@@ -416,7 +416,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
         // Create the triggers for the formatter
         // var parserObject.triggers = [];
-        var triggerMatch = /[^_][\w\d\-\'\"\#]*[\,\!\"\'\;\:\;]{0,}/g;
+        var triggerMatch = /[^_][\w\d\-\'\"\#]*[\,\!\"\'\;\:\;\.]{0,}/g;
         var triggers = [];
         var parserData = '';
         var triggerOne = '';
@@ -427,6 +427,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
             if (triggers !== null) {
                 triggerOne = triggers[0].trim();
+                lg(triggerOne)
                 if (triggerOne.length === 1) {
                     parserData = parserData.replace(triggerOne, '');
                     triggerTwo = parserData.trim();
@@ -485,6 +486,12 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
         var activeLine = '';
 
+        function setDefaultStyle() {
+            ci.fillStyle = fontDefaultColor;
+            fontStyle = [fontDefaultShape, 'normal', fontDefaultWeight, fontDefaultSize, fontDefaultFamily];
+            ci.font = fontStyle.join(' ');
+        }
+
         function resetStyle(resetFormatLevel, openTags) {
             // Get key value formatting or empty array
             keyValues = [];
@@ -532,6 +539,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
             // If we have open tags, dont reset to defaults but previous tag values
             if (openTags > 0) {
+                lg("setting style to: " + (resetFormatLevel - 1) + " from openTag: " + openTags);
                 setStyle(resetFormatLevel - 1);
             }
         }
@@ -608,16 +616,16 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
                 // Start cleaning up the linedata by clearing tags
                 for (var tag = 0; tag < parserObject.tags.length; tag++) {
-                    //activeLine = activeLine.replace(parserObject.tags[tag], '');
+                    activeLine = activeLine.replace(parserObject.tags[tag], '');
                 }
 
                 // Clean up image definitions
                 for (var image = 0; image < parserObject.imageTagStore.length; image++) {
-                    //activeLine = activeLine.replace(parserObject.imageTagStore[image], '');
+                    activeLine = activeLine.replace(parserObject.imageTagStore[image], '');
                 }
 
                 // Clean up closings
-                //activeLine = activeLine.replace(closingMatch, '');
+                activeLine = activeLine.replace(closingMatch, '');
             }
 
             var words = activeLine.split(' ');
@@ -663,27 +671,26 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
             var fontStyle = [fontShape, 'normal', fontWeight, fontDefaultSize, fontDefaultFamily];
             var wordSize = 0;
 
+
+            var triggerWordMatch = /[^\.\;\:\_\#\+\*]*/g;
             while (currentWord < wordCount) {
 
                 word = words[currentWord];
-                /*
+                var triggerWord = word.match(triggerWordMatch)[0];
                 if (useFormat) {
-                    lg(triggers.length)
-                    lg(orderLevel)
-                    if (orderLevel < triggers.length) {
-                        if (triggers[orderLevel] === false || word === triggers[orderLevel][0][1]) {
-                            /*
-                            lg("-----------")
-                            lg(word)
-                            lg("IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
-                            */
-                           /*
-                            setStyle(formatLevel);
-                            openTags.push(orderLevel);
+                    if (orderLevel === orderSize) {
+                        useFormat = false;
+                        setDefaultStyle();
+                    } else {
+                        if (orderLevel < triggers.length) {
+                            if (triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1].match(triggerWordMatch)[0]) {
+                                lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1] + " --- fl: " + formatLevel);
+                                setStyle(formatLevel);
+                                openTags.push(orderLevel);
+                            }
                         }
                     }
                 }
-                */
 
 
                 // Layout and draw the text
@@ -704,57 +711,49 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
                 if (currentWord === wordCount) {
                     stepY += fontDefaultLineHeight;
+                    setDefaultStyle();
                     stepX = 0;
                 }
 
 
                 // Change formatting if required
-                /*
                 if (useFormat) {
-                    if (orderLevel < orderSize) {
-                        /*
-                         if (triggers[orderLevel] !== false) {
-                            if (word === triggers[orderLevel][1][1]) {
-                                lg(word);
+                    if (orderLevel <= orderSize) {
+                        //lg("OUT ---- word: "+ triggerWord + " --------- IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
+
+                        if (orderLevel === orderSize - 1 || orderLevel > orders[orderLevel + 1]) {
+                            if (triggers[orderLevel] === false || triggerWord === triggers[orderLevel][1][1].match(triggerWordMatch)[0]) {
+                                var openTagItems = openTags.length - 1;
+
+                                while (openTagItems > openTags[0]) {
+                                    resetStyle(openTags[openTagItems], openTagItems);
+                                    openTagItems--;
+                                    formatLevel--;
+                                }
+
+                                if (orders[orderLevel + 1] === -1) {
+                                    setDefaultStyle();
+                                    formatLevel = orderLevel;
+                                } else if (orders[orderLevel + 1] > formatLevel) {
+                                    formatLevel = orders[orderLevel + 1];
+                                }
+
+                                openTags = [];
+                                orderLevel++;
                             }
-                         }
-                         */
-                        //lg("OUT ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
-                        /*
-                        if (orders[orderLevel + 1] < orders[orderLevel]) {
-                            /*
-                            lg("in2")
-                            lg(word)
-                            lg(openTags)
-                            */
-                           /*
-                            var openTagItems = openTags.length;
-                            //lg(ci.font+" --- "+ci.fillStyle);
-                            while (openTagItems > -1) {
-                                resetStyle(openTags[openTagItems], openTagItems);
-                                openTagItems--;
-                            }
-                            //lg(ci.font+" --- "+ci.fillStyle);
-                            formatLevel = orderSize - (openTags.length - 1);
-                            openTags = [];
-                            orderLevel++;
                         } else {
-                            if (word === triggers[formatLevel][1][1]) {
+                            if (triggers[orderLevel] === false || triggerWord === triggers[orderLevel][1][1].match(triggerWordMatch)[0]) {
                                 formatLevel++;
                                 orderLevel++;
                             }
                         }
-
                     }
                 }
-                */
             }
 
             line++;
         }
     }
-
-
 
 
     // Get sourceFile data or directly call markup processor
