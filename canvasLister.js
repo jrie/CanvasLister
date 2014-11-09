@@ -1,18 +1,19 @@
 'use strict';
-window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
-
-var hasConsole = typeof (window.console) !== undefined ? true : false;
-
-function lg(msg) {
-    if (hasConsole) {
-        console.log(msg);
-    }
-}
 
 //canvasLister("canvasItem1", "source1.txt", null, null, "#000", "bold", "#00aa00");
 //canvasLister("canvasItem2", "source1.txt", "Lithos Pro", "16", null, "#000033", "#dedede");
 function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, text) {
 
+    var hasConsole = typeof (window.console) !== undefined ? true : false;
+    
+    window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
+
+    function lg(msg) {
+        if (hasConsole) {
+            console.log(msg);
+        }
+    }
+    
     // The allowed attributes and there types (0 = Num, 1 = Hex, 2 = Text)
     var attributes = {
         'size': 0,
@@ -427,7 +428,6 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
             if (triggers !== null) {
                 triggerOne = triggers[0].trim();
-                lg(triggerOne)
                 if (triggerOne.length === 1) {
                     parserData = parserData.replace(triggerOne, '');
                     triggerTwo = parserData.trim();
@@ -684,7 +684,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                     } else {
                         if (orderLevel < triggers.length) {
                             if (triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1].match(triggerWordMatch)[0]) {
-                                lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1] + " --- fl: " + formatLevel);
+                                //lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1] + " --- fl: " + formatLevel);
                                 setStyle(formatLevel);
                                 openTags.push(orderLevel);
                             }
