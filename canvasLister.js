@@ -149,8 +149,8 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         fontDefaultSize = '11px';
     }
 
-    var fontDefaultLineHeight = parseFloat(fontDefaultSize)+4;
-    
+    var fontDefaultLineHeight = parseFloat(fontDefaultSize) + 4;
+
     if (fontDefaultWeight === null) {
         fontDefaultWeight = 'normal';
     }
@@ -163,7 +163,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         fontDefaultShape = 'normal';
     }
 
-    ci.font = fontDefaultShape+' normal '+fontDefaultWeight + ' ' + fontDefaultSize + ' ' + fontDefaultFamily;
+    ci.font = fontDefaultShape + ' normal ' + fontDefaultWeight + ' ' + fontDefaultSize + ' ' + fontDefaultFamily;
     ci.fillStyle = fontDefaultColor;
     ci.textAlign = 'left';
 
@@ -205,11 +205,10 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         parserObject.triggers = [];
 
         // Preprocess and remove image tag from formatting data, prepare image data
-        
+
         var imageData = formatData.match(imgMatch);
         var imageOrder = -3;
         var keyValues = [];
-        
 
         if (imageData !== null) {
             parserObject.imageTagStore = imageData;
@@ -231,7 +230,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 imageObject.height = '0px';
                 imageObject.width = '0px';
                 imageObject.id = imageOrder;
-                               
+
                 // Clean imageTag from format data
                 formatData = formatData.replace(imageTag, '');
 
@@ -271,17 +270,18 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
             }
         }
 
-
         var parserData = '';
-        var tagOrder = 0;
         var tagLength = 0;
-        
-        var startIndex = 0;
+        var currentIndex = 0;
+        var nextIndex = 0;
         var closingIndex = 0;
-        var hasOpenTag = false;
-        var openTag = 0;
-        
+        var currentTag = '';
+        var nextTag = '';
+        var openTags = [];
+        var processedTags = 0;
+
         parserObject.tags = formatData.match(formatTagMatch);
+
 
         if (parserObject.tags !== null) {
             tagLength = parserObject.tags.length;
@@ -289,141 +289,95 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
             parserObject.tags = [];
         }
 
+
+
+
         for (var tag = 0; tag < tagLength; tag++) {
 
-            startIndex = formatData.indexOf(parserObject.tags[tag + 1]);
+            currentTag = parserObject.tags[tag];
+            nextTag = parserObject.tags[tag+1];
+
+            currentIndex = formatData.indexOf(currentTag);
+            nextIndex = formatData.indexOf(nextTag);
             closingIndex = formatData.indexOf('</>');
 
-            //lg(startIndex+' '+closingIndex)
-            /*
-             if (startIndex === -1 && closingIndex === -1) {
-             continue;
-             }
-             */
+            if (closingIndex === 0) {
+                formatData = formatData.substr(closingIndex+3);
+                currentIndex = formatData.indexOf(currentTag);
+                nextIndex = formatData.indexOf(nextTag);
+                closingIndex = formatData.indexOf('</>');
+                openTags.splice(openTags.length-1, 1);
+            }
 
-            // If we have no closing tag.. this will skip an entry/entries
-            // TODO: parse as much as possible and simply add fictional closings
-            if (closingIndex === -1) {
+            //lg('tag: '+currentTag);
+            //lg('current: '+currentIndex+' -- next: '+nextIndex+' -- close: '+closingIndex);
+
+            // If the tag start not a zero, we have non-tagged data
+            if (currentIndex !== 0) {
+                //lg("in non tagged data");
+                if (openTags.length === 0) {
+                    parserData = formatData.substring(0, currentIndex);
+                    parserObject.data.push(parserData);
+                    parserObject.orders.push(-1);
+                    formatData = formatData.substr(currentIndex);
+                } else {
+                    parserData = formatData.substring(0, closingIndex);
+                    parserObject.data.push(parserData);
+                    parserObject.orders.push(openTags[0]);
+                    formatData = formatData.substr(closingIndex+3);
+                }
+
+                openTags = [];
+                tag--;
                 continue;
             }
 
-            // This matches the last format tag in the list
-            if (startIndex === -1 && formatData.indexOf(parserObject.tags[tag]) === 0) {
-                parserData = formatData.substr(parserObject.tags[tag].length, closingIndex - parserObject.tags[tag].length);
+            // Last tag processing
+            if(nextIndex === -1) {
+                parserData = formatData.substring(currentTag.length, closingIndex);
+                formatData = formatData.substr(closingIndex+3);
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
+                processedTags++;
                 continue;
             }
 
-            // Matches if we have resolved a encapsulated tags
-            if (tagOrder === -1) {
-                parserData = formatData.substring(0, formatData.indexOf(parserObject.tags[tag]));
+            // Assume non nested tag
+            if (nextIndex > closingIndex && currentIndex === 0) {
+                //lg("in non nested");
 
-                if (parserData === '') {
-                    tag--;
-                    tagOrder++;
-                    continue;
-                }
+                if (openTags.length === 0) {
+                    parserData = formatData.substring(currentTag.length, closingIndex);
+                    formatData = formatData.substr(closingIndex+3);
 
-                parserObject.data.push(parserData);
-                if (hasOpenTag) {
-                    parserObject.orders.push(parserObject.tags.indexOf(parserObject.tags[tag]));
+                    parserObject.data.push(parserData);
+                    parserObject.orders.push(tag);
                 } else {
-                    if (startIndex === -1 && formatData.indexOf(parserObject.tags[tag]) > 0) {
-                        parserObject.orders.push(openTag - 1);
-                    } else {
-                        parserObject.orders.push(-1);
-                    }
+                    parserData = formatData.substring(currentTag.length, closingIndex);
+                    formatData = formatData.substr(closingIndex+3);
+                    parserObject.data.push(parserData);
+                    parserObject.orders.push(tag);
+
+                    formatData = formatData.substr((openTags.length-1)*3);
+                    openTags = openTags.slice(openTags.length-1, 1);
                 }
 
-                formatData = formatData.substr(parserData.length);
-                tag--;
-                tagOrder++;
-
+                processedTags++;
                 continue;
             }
 
-
-
-            // No other open tag found
-            if (startIndex === -1) {
-                if (closingIndex !== formatData.length - 3) {
-                    parserData = formatData.substring(0, closingIndex);
-                } else {
-                    parserData = formatData.substring(0, formatData.indexOf(parserObject.tags[tag]));
-                }
+            // Assume nested tag
+            if (nextIndex < closingIndex && currentIndex === 0) {
+                //lg("in nested tag");
+                parserData = formatData.substring(currentTag.length, nextIndex);
+                formatData = formatData.substr(nextIndex);
                 parserObject.data.push(parserData);
-                parserObject.orders.push(tagOrder);
-                formatData = formatData.substr(closingIndex + 3);
-
-                tagOrder--;
-                tag--;
-
+                parserObject.orders.push(tag);
+                openTags.push(tag);
+                processedTags++;
                 continue;
-            }
-
-            // Tag inside a tag
-            if (startIndex < closingIndex) {
-                parserData = formatData.substring(parserObject.tags[tag].length, startIndex);
-                formatData = formatData.substr(startIndex);
-                parserObject.data.push(parserData);
-                parserObject.orders.push(tagOrder);
-
-                if (!hasOpenTag) {
-                    hasOpenTag = true;
-                    openTag = tagOrder;
-                }
-
-                tagOrder++;
-            } else {
-                // Single tag element or closing, might be inside another tag
-                parserData = formatData.substring(parserObject.tags[tag].length, closingIndex);
-                parserObject.data.push(parserData);
-
-                formatData = formatData.substr(closingIndex + 3);
-
-                if (hasOpenTag) {
-                    parserObject.orders.push(tagOrder);
-                    hasOpenTag = false;
-                } else {
-                    parserObject.orders.push(parserObject.tags.indexOf(parserObject.tags[tag]));
-                }
-
-                while (tagOrder-- > openTag) {
-                    formatData = formatData.replace('</>', '');
-                    /*
-                     parserObject.orders.push(tagOrder);
-                     parserObject.data.push('');
-                     */
-                }
             }
         }
-
-        // Merge duplicated tags and rewrite order points
-        /*
-        tagLength = parserObject.tags.length;
-        var tagOrders = parserObject.orders.length;
-        var currentTag = parserObject.tags[0];
-        var subTag = 0;
-        var orderItem = 0;
-        for (var tag = 1; tag < tagLength; tag++) {
-            for (subTag = tag + 1; subTag < tagLength; subTag++) {
-                if (currentTag === parserObject.tags[subTag]) {
-                    for (orderItem = 0; orderItem < tagOrders; orderItem++) {
-                        if (subTag === parserObject.orders[orderItem]) {
-                            parserObject.orders[orderItem] = tag;
-                        }
-                    }
-
-                    parserObject.tags.splice(subTag, 1);
-                    tagLength--;
-                    tag--;
-                }
-            }
-
-            currentTag = parserObject.tags[tag];
-        }
-        */
 
         // Create key value store for formatting after parsing the data
         //var parserObject.tagKeyValues = {};
@@ -462,7 +416,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
         // Create the triggers for the formatter
         // var parserObject.triggers = [];
-        var triggerMatch = /[^_][\w\d\-\'\"\#]*/g;
+        var triggerMatch = /[^_][\w\d\-\'\"\#]*[\,\!\"\'\;\:\;]{0,}/g;
         var triggers = [];
         var parserData = '';
         var triggerOne = '';
@@ -492,23 +446,23 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
         // Summary
         /*
-        lg(parserObject.tags);
-        lg(parserObject.data);
-        lg(parserObject.orders);
-        lg(parserObject.tagStore);
-        lg(parserObject.tagKeyValues);
+         lg(parserObject.tags);
+         lg(parserObject.data);
+         lg(parserObject.orders);
+         lg(parserObject.tagStore);
+         lg(parserObject.tagKeyValues);
 
-        if (parserObject.imageTagStore.length !== 0) {
-            lg(parserObject.imageStore);
-            lg(parserObject.imageTagStore);
-        }
+         if (parserObject.imageTagStore.length !== 0) {
+         lg(parserObject.imageStore);
+         lg(parserObject.imageTagStore);
+         }
 
-        lg(parserObject.triggers);
-        lg('---object-----------------------');
-        lg(parserObject);
-        lg(' ');
-        lg('  ');
-        */
+         lg(parserObject.triggers);
+         lg('---object-----------------------');
+         lg(parserObject);
+         lg(' ');
+         lg('  ');
+         */
         return parserObject;
     }
 
@@ -520,7 +474,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         var markupParts = markupData.trim().split('\n');
 
         var line = 0;
-        var lines = markupParts.length - 1;
+        var lines = markupParts.length;
         var stepY = 0;
         var stepX = 0;
         var spacerSize = 0;
@@ -528,66 +482,173 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         var parserObjectStore = [];
 
         ci.translate(offsetX, offsetY);
-        
+
         var activeLine = '';
-        
+
+        function resetStyle(resetFormatLevel, openTags) {
+            // Get key value formatting or empty array
+            keyValues = [];
+            if (tagKeyValues.hasOwnProperty(resetFormatLevel)) {
+                keyValues = tagKeyValues[resetFormatLevel];
+            }
+
+            simpleTag = tagStore[resetFormatLevel];
+
+            // Check if we have a simple tag to start with
+            if (simpleTag !== '') {
+                switch (simpleTag) {
+                    case 'b':
+                        fontWeight = fontDefaultWeight;
+                        break;
+                    case 'i':
+                        fontShape = fontDefaultShape;
+                        break;
+                    case 'bi':
+                        fontWeight = fontDefaultWeight;
+                        fontShape = fontDefaultShape;
+                        break;
+                }
+
+                fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
+                ci.font = fontStyle.join(' ');
+            }
+
+            if (keyValues.length !== 0) {
+                for (var keyItem = 0; keyItem < keyValues.length; keyItem++) {
+                    switch (keyValues[keyItem][0]) {
+                        case "size":
+                            fontSize = fontDefaultSize;
+                            lineHeightHint = fontDefaultLineHeight;
+                            break;
+                        case "color":
+                            ci.fillStyle = fontDefaultColor;
+                            break;
+                    }
+                }
+
+                fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
+                ci.font = fontStyle.join(' ');
+            }
+
+            // If we have open tags, dont reset to defaults but previous tag values
+            if (openTags > 0) {
+                setStyle(resetFormatLevel - 1);
+            }
+        }
+
+        function setStyle(setFormatLevel) {
+            // Get key value formatting or empty array
+            keyValues = [];
+            if (tagKeyValues.hasOwnProperty(setFormatLevel)) {
+                keyValues = tagKeyValues[setFormatLevel];
+            }
+
+            simpleTag = tagStore[setFormatLevel];
+
+            // Check if we have a simple tag to start with
+            if (simpleTag !== '') {
+                switch (simpleTag) {
+                    case 'b':
+                        fontWeight = 'bold';
+                        break;
+                    case 'i':
+                        fontShape = 'italic';
+                        break;
+                    case 'bi':
+                        fontWeight = 'bold';
+                        fontShape = 'italic';
+                        break;
+                }
+
+                fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
+                ci.font = fontStyle.join(' ');
+            }
+
+            if (keyValues.length !== 0) {
+                for (var keyItem = 0; keyItem < keyValues.length; keyItem++) {
+                    switch (keyValues[keyItem][0]) {
+                        case "size":
+                            fontSize = keyValues[keyItem][1];
+                            lineHeightHint = parseFloat(fontSize) + 4;
+
+                            if (fontLineHeight < lineHeightHint) {
+                                fontLineHeight = lineHeightHint;
+                            }
+
+                            break;
+                        case "color":
+                            fontColor = keyValues[keyItem][1];
+                            ci.fillStyle = fontColor;
+                            break;
+                    }
+                }
+
+                fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
+                ci.font = fontStyle.join(' ');
+            }
+        }
+
+
+        // Do the actual iterations
         while (line < lines) {
             activeLine = markupParts[line];
 
             hasFormat = hasFormatCheck.test(activeLine);
-            
+
             // Forcefull image detection
             if (activeLine.match(imgMatch) !== null) {
                 hasFormat = true;
             }
 
+
             if (hasFormat) {
-                var parserObject = simpleParse( activeLine.match(tagMatchPattern)[0] );
+                var parserObject = simpleParse(activeLine.match(tagMatchPattern)[0]);
                 parserObjectStore.push(parserObject);
                 lg(parserObject);
-                
+
                 // Start cleaning up the linedata by clearing tags
                 for (var tag = 0; tag < parserObject.tags.length; tag++) {
-                    activeLine = activeLine.replace(parserObject.tags[tag], '');
+                    //activeLine = activeLine.replace(parserObject.tags[tag], '');
                 }
-                
+
                 // Clean up image definitions
                 for (var image = 0; image < parserObject.imageTagStore.length; image++) {
-                    activeLine = activeLine.replace(parserObject.imageTagStore[image], '');
+                    //activeLine = activeLine.replace(parserObject.imageTagStore[image], '');
                 }
-                
+
                 // Clean up closings
-                activeLine = activeLine.replace(closingMatch, '');
+                //activeLine = activeLine.replace(closingMatch, '');
             }
 
             var words = activeLine.split(' ');
             var wordCount = words.length;
-            
+
             var currentWord = 0;
             var currentSize = 0;
             var word = '';
-            
-            
+
+
             // The formatter level and formatter switch
-            var formatLevel = -1;
+            var orderLevel = 0;
+            var formatLevel = 0;
             var useFormat = parserObject.tags.length !== 0 ? true : false;
             var openTags = [];
-            
+
             // Shorthands for the parserObject data
             var tagStore = parserObject.tagStore;
             var tagKeyValues = parserObject.tagKeyValues;
             var triggers = parserObject.triggers;
             var orders = parserObject.orders;
-            
+
             // Sizes for looping
             var triggerSize = parserObject.triggers.length;
             var orderSize = parserObject.orders.length;
-            
+
             var trigger = 0;
             var order = 0;
             var simpleTag = '';
             var keyValues = [];
-            
+
 
             // Reset to default values
             var fontWeight = fontDefaultWeight;
@@ -596,79 +657,38 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
             var fontFamily = fontDefaultFamily;
             var fontShape = fontDefaultShape;
             var fontLineHeight = fontDefaultLineHeight;
-            
+
             var lineHeightHint = fontLineHeight;
-            
+
             var fontStyle = [fontShape, 'normal', fontWeight, fontDefaultSize, fontDefaultFamily];
             var wordSize = 0;
-            
+
             while (currentWord < wordCount) {
 
                 word = words[currentWord];
-                
+                /*
                 if (useFormat) {
-                    trigger = triggerSize;
-                    while (trigger--) {
-                        if ( triggers[trigger] === false || word === triggers[trigger][0][1]) {
-                            formatLevel = trigger;
-                            
-                            // Get key value formatting or empty array
-                            keyValues = [];
-                            if (tagKeyValues.hasOwnProperty(formatLevel)) {
-                                keyValues = tagKeyValues[formatLevel];
-                            }
-                            
-                            simpleTag = tagStore[formatLevel];
-                            
-                            // Check if we have a simple tag to start with
-                            if (simpleTag !== '') {
-                                switch (simpleTag) {
-                                    case 'b':
-                                        fontWeight = 'bold';
-                                        break;
-                                    case 'i':
-                                        fontShape = 'italic';
-                                        break;
-                                    case 'bi':
-                                        fontWeight = 'bold';
-                                        fontShape = 'italic';
-                                        break;
-                                }
-                                
-                                fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
-                                ci.font = fontStyle.join(' ');
-                            }
-                            
-                            if (keyValues.length !== 0) {
-                                for (var keyItem = 0; keyItem < keyValues.length; keyItem++) {
-                                    switch (keyValues[keyItem][0]) {
-                                        case "size":
-                                            fontSize = keyValues[keyItem][1];
-                                            lineHeightHint = parseFloat(fontSize)+4;
-                                            
-                                            if (fontLineHeight < lineHeightHint) {
-                                                fontLineHeight = lineHeightHint;
-                                            }
-                                            
-                                            break;
-                                        case "color":
-                                            fontColor = keyValues[keyItem][1];
-                                            ci.fillStyle = fontColor;
-                                            break;
-                                    }
-                                }
-                                
-                                fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
-                                ci.font = fontStyle.join(' ');
-                            }
+                    lg(triggers.length)
+                    lg(orderLevel)
+                    if (orderLevel < triggers.length) {
+                        if (triggers[orderLevel] === false || word === triggers[orderLevel][0][1]) {
+                            /*
+                            lg("-----------")
+                            lg(word)
+                            lg("IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
+                            */
+                           /*
+                            setStyle(formatLevel);
+                            openTags.push(orderLevel);
                         }
                     }
                 }
+                */
 
 
                 // Layout and draw the text
-                wordSize =  Math.ceil(ci.measureText(word).width);
-                spacerSize = Math.ceil(ci.measureText(' ').width); 
+                wordSize = Math.ceil(ci.measureText(word).width);
+                spacerSize = Math.ceil(ci.measureText(' ').width);
                 var nextSize = currentSize + wordSize;
 
                 if (nextSize > sizeX) {
@@ -677,76 +697,64 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                     currentSize = 0;
                 } else {
                     currentWord++;
-                    ci.fillText(word, stepX, stepY+fontLineHeight);
-                    stepX += (wordSize+spacerSize);
+                    ci.fillText(word, stepX, stepY + fontLineHeight);
+                    stepX += (wordSize + spacerSize);
                     currentSize = stepX;
                 }
 
                 if (currentWord === wordCount) {
                     stepY += fontDefaultLineHeight;
                     stepX = 0;
-                    
                 }
 
 
                 // Change formatting if required
+                /*
                 if (useFormat) {
-                    if (formatLevel === -1) {
-                        continue;
-                    }
-                    if ( triggers[formatLevel] === false || word === triggers[formatLevel][1][1]) {
-
-                        // Get key value formatting or empty array
-                        keyValues = [];
-                        if (tagKeyValues.hasOwnProperty(formatLevel)) {
-                            keyValues = tagKeyValues[formatLevel];
-                        }
-
-                        simpleTag = tagStore[formatLevel];
-
-                        // Check if we have a simple tag to start with
-                        if (simpleTag !== '') {
-                            switch (simpleTag) {
-                                case 'b':
-                                    fontWeight = fontDefaultWeight;
-                                    break;
-                                case 'i':
-                                    fontShape = fontDefaultShape;
-                                    break;
-                                case 'bi':
-                                    fontWeight = fontDefaultWeight;
-                                    fontShape = fontDefaultShape;
-                                    break;
+                    if (orderLevel < orderSize) {
+                        /*
+                         if (triggers[orderLevel] !== false) {
+                            if (word === triggers[orderLevel][1][1]) {
+                                lg(word);
                             }
-
-                            fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
-                            ci.font = fontStyle.join(' ');
-                        }
-
-                        if (keyValues.length !== 0) {
-                            for (var keyItem = 0; keyItem < keyValues.length; keyItem++) {
-                                switch (keyValues[keyItem][0]) {
-                                    case "size":
-                                        fontSize = fontDefaultSize;
-                                        lineHeightHint = fontDefaultLineHeight;
-
-                                        break;
-                                    case "color":
-                                        ci.fillStyle = fontDefaultColor;
-                                        break;
-                                }
+                         }
+                         */
+                        //lg("OUT ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
+                        /*
+                        if (orders[orderLevel + 1] < orders[orderLevel]) {
+                            /*
+                            lg("in2")
+                            lg(word)
+                            lg(openTags)
+                            */
+                           /*
+                            var openTagItems = openTags.length;
+                            //lg(ci.font+" --- "+ci.fillStyle);
+                            while (openTagItems > -1) {
+                                resetStyle(openTags[openTagItems], openTagItems);
+                                openTagItems--;
                             }
-                            
-                            fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontDefaultFamily];
-                            ci.font = fontStyle.join(' ');
+                            //lg(ci.font+" --- "+ci.fillStyle);
+                            formatLevel = orderSize - (openTags.length - 1);
+                            openTags = [];
+                            orderLevel++;
+                        } else {
+                            if (word === triggers[formatLevel][1][1]) {
+                                formatLevel++;
+                                orderLevel++;
+                            }
                         }
+
                     }
                 }
+                */
             }
 
             line++;
         }
     }
+
+
 
 
     // Get sourceFile data or directly call markup processor
