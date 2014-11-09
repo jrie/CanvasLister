@@ -539,7 +539,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
             // If we have open tags, dont reset to defaults but previous tag values
             if (openTags > 0) {
-                lg("setting style to: " + (resetFormatLevel - 1) + " from openTag: " + openTags);
+                //lg("setting style to: " + (resetFormatLevel - 1) + " from openTag: " + openTags);
                 setStyle(resetFormatLevel - 1);
             }
         }
