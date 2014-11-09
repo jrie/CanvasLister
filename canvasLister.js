@@ -10,7 +10,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
     function lg(msg) {
         if (hasConsole) {
-            console.log(msg);
+            window.console.log(msg);
         }
     }
     
@@ -677,9 +677,12 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
                 word = words[currentWord];
                 var triggerWord = word.match(triggerWordMatch)[0];
+                               
                 if (useFormat) {
-                    if (orderLevel === orderSize) {
+                    if (orderLevel >= orderSize) {
                         useFormat = false;
+                        setDefaultStyle();
+                    } else if (orders[orderLevel] === -1 && formatLevel === 0) {
                         setDefaultStyle();
                     } else {
                         if (orderLevel < triggers.length) {
@@ -737,7 +740,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                                 } else if (orders[orderLevel + 1] > formatLevel) {
                                     formatLevel = orders[orderLevel + 1];
                                 }
-
+                                
                                 openTags = [];
                                 orderLevel++;
                             }
