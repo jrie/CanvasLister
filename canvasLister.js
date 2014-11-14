@@ -2,7 +2,7 @@
 
 //canvasLister("canvasItem1", "source1.txt", null, null, "#000", "bold", "#00aa00");
 //canvasLister("canvasItem2", "source1.txt", "Lithos Pro", "16", null, "#000033", "#dedede");
-function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, text) {
+function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, text) {
 
     var hasConsole = typeof (window.console) !== undefined ? true : false;
 
@@ -111,11 +111,11 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
     }
 
 
-    var canvas = document.getElementById(canvasItem);
+    var canvas = document.getElementById(canvasItemId);
 
     // Checking canvas presence
     if (canvas === null) {
-        lg('Canvas item "' + canvasItem + '" cannot be found, doing nothing.');
+        lg('Canvas item "' + canvasItemId + '" cannot be found, doing nothing.');
         return;
     }
 
@@ -129,7 +129,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
     // Check whether a sourcefile is given and if text then is provided which is required
     if (sourceFile === null) {
         if (typeof (text) === undefined) {
-            lg('Source file is not provided, but no text either, canvas item id "' + canvasItem + '"');
+            lg('Source file is not provided, but no text either, canvas item id "' + canvasItemId + '"');
             return;
         }
     }
@@ -748,6 +748,17 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
                 // Clean up closings
                 activeLine = activeLine.replace(closingMatch, '');
+            } else {
+                var parserObject = {};
+                parserObject.data = [];
+                parserObject.tags = [];
+                parserObject.imageStore = [];
+                parserObject.imageTagStore = [];
+                parserObject.orders = [];
+                parserObject.tagStore = {};
+                parserObject.tagKeyValues = {};
+                parserObject.triggers = [];
+                parserObject.dataPoints = [];
             }
 
             var words = activeLine.split(' ');
