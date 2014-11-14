@@ -1,0 +1,52 @@
+{
+    "author": "jrie",
+    "Description": "Canvas Lister Guide",
+    "General": {
+        "Using guide": {
+            "General": " The lister can be added by calling \"canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, text);",
+            "cavansElement": "Defines which canvas element id we want to display markup information on",
+            "sourceFile": "References the source file from which our textmarkup is loaded from, this is loaded using Ajax, set to null, if you want to to provide a string using the \"text\" parameter",
+            "font": "Which font-family, by default, should be used to display text. In example: \"Helvetica\", defaults to sans-serif if set to null",
+            "size": "Which font size in pixels to use for general text, in example \"16px\", defaults to 12px if set to null",
+            "weight": "Default text weight, \"normal\" by default, possible values are \"bold\" or any other weigth provided by a canvas item",
+            "bg": "Hex value for the canvas background, defaults to white/#ffffff",
+            "fg": "Hex value for the text color to use if not defined otherwise, defaults to black/#000000",
+            "text": "Not yet tested/implemented - if the text is provided, and the sourceFile parameter set to zero, we get our text information via the string provided here; this can include syntax as described later",
+            "usePaging": "Not implemented yet - if any element like text would overflow the canvas in height, we start using pagination",
+            "pagingHeight": "Not implemented yet - Height in pixels or percentage on which the text should be splitted in pages"
+        },
+        "Syntax/tag elements": {
+            "General Information": "All of the following elements have custom attributes and different ways to display or format them, please refer to the Elements section for details",
+            "text": "Everything which is not declared otherwise is threaded as text, but which can be formatted using style tags",
+            "img": "Basic implementation started, not yet completed - <img> - Defines an image using \"<img>\" which should be displayed at this location, inside or outside of the text, has addional options, doesnt have a closing tag!",
+            "video": "Not implemented yet - <video> - defines a video entry which should be displayed, similar to an img element and might requrie additional parameter to work"
+        }
+    },
+    "Elements": {
+        "General": "Each element can be defined using a proper enclosing tag",
+        "text": {
+            "Defined by": "An example text. With <i>italic</> formatting or both <bi>bold italic</> or <size=\"14px\">Size in pixel</>",
+            "color": "color=\"#FF0000\" - tells the color of the text should be red, provided in a hex value, defaults to black/#000000",
+            "i": "Tells the text should be shown in italic, example <i>Italic text<i>",
+            "b": "If given, the text is shown in bold, which also equal \"font-weight: bold\", in example <b>Im bold text</>",
+            "bi": "If present, the text is shown in bold and italic - example <bi> bold italic text</>",
+            "font": "Not implemented yet - the name of the font family to use for this font, defaults to what has been provided in the main parameter",
+            "weight": "Not implemented yet",
+            "Advanced example": "<b color=\"#00AA00\" size=\"14px\">Test in green 14 pixels<color=\"#AA0000\" size=\"16px\">16 px height text</></>"
+
+        },
+        "img": {
+            "General": "Feature not yet implemented, to be done",
+            "text": {
+                "title": "This is the title/hover text provided by an image",
+                "description": "This text is shown as a description text for the image, it can be configured where it should be displayed using a simple syntax",
+                "loadLocal": "a url - if provided, we try to load the image from an url defining its src, please note that there is no check if the url has valid image data, this might change",
+                "borderWidth": "Bordersize in px",
+                "borderColor": "Bordercolor in Hex format",
+                "margin": "Spacing around the image and its description",
+                "textFlow": "None/Left/Right - defines if text should flow around an the image, defaults to None, meaning the image is shown in its own horizontal space separated from text and markup",
+                "align": "Left/Center/Right - should the image be aligned on the left, center or right, defaults to center"
+            }
+        }
+    }
+}
