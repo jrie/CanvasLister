@@ -22,7 +22,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
     };
 
     var validTags = ['left', 'right', 'center'];
-    var validUnits = ['px']; // %;
+    var validUnits = ['px', "%"];
     var matchHex = /#[0-9a-f]*/gi;
 
     // Performs checks if a given keyValuePair is valid to some ruleset
@@ -420,7 +420,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
         for (var tag = 0; tag < parserObject.tags.length; tag++) {
             singleKey = parserObject.tags[tag].match(singleValueMatch);
             keyValues = parserObject.tags[tag].match(keyValueMatch);
-            
+
 
             if (singleKey !== null) {
                 // Only the first matched singleKey is used for formatting
@@ -430,10 +430,10 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                 parserObject.tagStore[tag] = '';
             }
 
-            
+
             if (keyValues !== null) {
                 permittedKeyValues = [];
-                
+
                 // If we have one or more single key values, remove those to
                 // build up the keyValue pairs list
                 var keyValuesSize = keyValues.length;
@@ -653,7 +653,10 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                     switch (keyValues[keyItem][0]) {
                         case "size":
                             fontSize = fontDefaultSize;
-                            lineHeightHint = fontDefaultLineHeight;
+                            if (lineHeightHint < fontDefaultLineHeight) {
+                                lineHeightHint = fontDefaultLineHeight;
+                            }
+
                             break;
                         case "color":
                             ci.fillStyle = fontDefaultColor;
@@ -707,8 +710,12 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                 for (var keyItem = 0; keyItem < keyValues.length; keyItem++) {
                     switch (keyValues[keyItem][0]) {
                         case "size":
-                            fontSize = keyValues[keyItem][1];
-                            lineHeightHint = parseFloat(fontSize) + 4;
+                            if (keyValues[keyItem][1].indexOf("%") !== -1) {
+                                fontSize = (parseFloat(fontDefaultSize) * (parseFloat(keyValues[keyItem][1]) / 100)).toString() + "px";
+                            } else {
+                                fontSize = keyValues[keyItem][1];
+                            }
+                            lineHeightHint = parseFloat(fontSize) * 1.05;
 
                             if (fontLineHeight < lineHeightHint) {
                                 fontLineHeight = lineHeightHint;
@@ -811,8 +818,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
             var fontFamily = fontDefaultFamily;
             var fontShape = fontDefaultShape;
             var fontLineHeight = fontDefaultLineHeight;
-
-            var lineHeightHint = fontLineHeight;
+            var lineHeightHint = fontDefaultLineHeight;
 
             var fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontFamily];
             var wordSize = 0;
@@ -855,7 +861,17 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                 var nextSize = currentSize + wordSize;
 
                 if (nextSize > sizeX) {
-                    stepY += fontDefaultLineHeight;
+
+                    if (fontDefaultLineHeight < fontLineHeight) {
+                        stepY += lineHeightHint + 4;
+                    } else {
+                        stepY += fontDefaultLineHeight;
+                    }
+
+                    if (!useFormat) {
+                        fontLineHeight = fontDefaultLineHeight;
+                    }
+
                     stepX = 0;
                     currentSize = 0;
                 } else {
@@ -866,7 +882,13 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                 }
 
                 if (currentWord === wordCount) {
-                    stepY += fontDefaultLineHeight;
+                    if (fontDefaultLineHeight < fontLineHeight) {
+                        stepY += fontLineHeight;
+                    } else {
+                        stepY += fontDefaultLineHeight;
+                    }
+
+                    //stepY += fontDefaultLineHeight;
                     setDefaultStyle();
                     stepX = 0;
                 }
