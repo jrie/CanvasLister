@@ -418,18 +418,36 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
         var permittedKeyValues = [];
 
         for (var tag = 0; tag < parserObject.tags.length; tag++) {
-            keyValues = parserObject.tags[tag].match(keyValueMatch);
             singleKey = parserObject.tags[tag].match(singleValueMatch);
+            keyValues = parserObject.tags[tag].match(keyValueMatch);
+            
 
             if (singleKey !== null) {
+                // Only the first matched singleKey is used for formatting
                 parserObject.tagStore[tag] = singleKey[0];
             } else {
                 // Push an empty string to tell that we have no simple tag value
                 parserObject.tagStore[tag] = '';
             }
 
+            
             if (keyValues !== null) {
                 permittedKeyValues = [];
+                
+                // If we have one or more single key values, remove those to
+                // build up the keyValue pairs list
+                var keyValuesSize = keyValues.length;
+                if (singleKey !== null) {
+                    for (var keyValue = 0; keyValue < keyValuesSize; keyValue++) {
+                        for (var singleTag = 0; singleTag < singleKey.length; singleTag++) {
+                            if (singleKey[singleTag] === keyValues[keyValue]) {
+                                keyValues.splice(keyValue, 1);
+                                keyValuesSize--;
+                            }
+                        }
+                    }
+                }
+
                 for (var keyValue = 0; keyValue < keyValues.length; keyValue += 2) {
                     if (checkKeyValuePair([keyValues[keyValue], keyValues[keyValue + 1]])) {
                         permittedKeyValues.push([keyValues[keyValue], keyValues[keyValue + 1]]);
@@ -541,8 +559,6 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                 parserObject.orderNestedTags.push(nestedTagCount);
             }
         }
-
-        lg(parserObject);
 
         // After figuring out the how the tags are nested in orderNestedTags
         // lets get the indexes for the data right, so we can start formatting
