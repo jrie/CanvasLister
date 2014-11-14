@@ -1,4 +1,4 @@
-'use strict';
+//'use strict';
 
 //canvasLister("canvasItem1", "source1.txt", null, null, "#000", "bold", "#00aa00");
 //canvasLister("canvasItem2", "source1.txt", "Lithos Pro", "16", null, "#000033", "#dedede");
@@ -21,7 +21,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         'align': 2
     };
 
-    var validTexts = ['left', 'right', 'center'];
+    var validTags = ['left', 'right', 'center'];
     var validUnits = ['px']; // %;
     var matchHex = /#[0-9a-f]*/gi;
 
@@ -89,7 +89,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
     }
 
     function isValidText(input) {
-        if (validTexts.indexOf(input) !== -1) {
+        if (validTags.indexOf(input) !== -1) {
             return true;
         }
 
@@ -204,9 +204,9 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         parserObject.tagStore = {};
         parserObject.tagKeyValues = {};
         parserObject.triggers = [];
-
+        parserObject.dataPoints = [];
+        
         // Preprocess and remove image tag from formatting data, prepare image data
-
         var imageData = formatData.match(imgMatch);
         var imageOrder = -3;
         var keyValues = [];
@@ -280,6 +280,8 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         var nextTag = '';
         var openTags = [];
         var processedTags = 0;
+        
+        var dataPoint = 0;
 
         parserObject.tags = formatData.match(formatTagMatch);
 
@@ -290,9 +292,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
             parserObject.tags = [];
         }
 
-
-
-
+       
         for (var tag = 0; tag < tagLength; tag++) {
 
             currentTag = parserObject.tags[tag];
@@ -301,7 +301,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
             currentIndex = formatData.indexOf(currentTag);
             nextIndex = formatData.indexOf(nextTag);
             closingIndex = formatData.indexOf('</>');
-
+                       
             if (closingIndex === 0) {
                 formatData = formatData.substr(closingIndex + 3);
                 currentIndex = formatData.indexOf(currentTag);
@@ -309,7 +309,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 closingIndex = formatData.indexOf('</>');
                 openTags.splice(openTags.length - 1, 1);
             }
-
+            
             //lg('tag: '+currentTag);
             //lg('current: '+currentIndex+' -- next: '+nextIndex+' -- close: '+closingIndex);
 
@@ -321,13 +321,25 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                     parserObject.data.push(parserData);
                     parserObject.orders.push(-1);
                     formatData = formatData.substr(currentIndex);
+                    
+                    parserObject.dataPoints.push(dataPoint);
+                    
+                    if (parserData.trim() !== "") {
+                        dataPoint += parserData.length;
+                    }
                 } else {
                     parserData = formatData.substring(0, closingIndex);
                     parserObject.data.push(parserData);
                     parserObject.orders.push(openTags[0]);
                     formatData = formatData.substr(closingIndex + 3);
+                    
+                    parserObject.dataPoints.push(dataPoint);
+                    
+                    if (parserData.trim() !== "") {
+                        dataPoint += parserData.length;
+                    }
                 }
-
+                
                 openTags = [];
                 tag--;
                 continue;
@@ -340,6 +352,12 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
                 processedTags++;
+                
+                parserObject.dataPoints.push(dataPoint);
+                if (parserData.trim() !== "") {
+                    dataPoint += parserData.length;
+                }
+                
                 continue;
             }
 
@@ -350,7 +368,6 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 if (openTags.length === 0) {
                     parserData = formatData.substring(currentTag.length, closingIndex);
                     formatData = formatData.substr(closingIndex + 3);
-
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
                 } else {
@@ -358,11 +375,16 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                     formatData = formatData.substr(closingIndex + 3);
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
-
                     formatData = formatData.substr((openTags.length - 1) * 3);
                     openTags = openTags.slice(openTags.length - 1, 1);
                 }
-
+                
+                parserObject.dataPoints.push(dataPoint);
+                
+                if (parserData.trim() !== "") {
+                    dataPoint += parserData.length;
+                }
+                
                 processedTags++;
                 continue;
             }
@@ -376,10 +398,17 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 parserObject.orders.push(tag);
                 openTags.push(tag);
                 processedTags++;
+                
+                parserObject.dataPoints.push(dataPoint);
+                
+                if (parserData.trim() !== "") {
+                    dataPoint += parserData.length;
+                }
+                
                 continue;
             }
         }
-
+        
         // Create key value store for formatting after parsing the data
         //var parserObject.tagKeyValues = {};
         var keyValues = [];
@@ -415,7 +444,12 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
         }
 
-        // Create the triggers for the formatter
+        // Create the triggers for the formatter from the parserObject.data
+        // for a particular tag
+        // Triggers are cleared of some special characters, to
+        // avoid that we cant trigger from "merged" data once the markup
+        // has been cleared from tag separators and line endings, line separators
+        // become merged during the clearing.
         // var parserObject.triggers = [];
         var triggerMatch = /[^_][\w\d\-\'\"\#]*[\,\!\"\'\;\:\;\.]{0,}/g;
         var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\&\`\!]/g;
@@ -423,12 +457,14 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
         var parserData = '';
         var triggerOne = '';
         var triggerTwo = '';
+        
         for (var data = 0; data < parserObject.data.length; data++) {
             parserData = parserObject.data[data].trim();
             triggers = parserData.match(triggerMatch);
-
+            
             if (triggers !== null) {
                 triggerOne = triggers[0].replace(triggerClear, '').trim();
+                               
                 if (triggerOne.length === 1) {
                     parserData = parserData.replace(triggerOne, '');
                     triggerTwo = parserData.trim();
@@ -436,16 +472,86 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 } else {
                     triggerTwo = triggers[triggers.length - 1].replace(triggerClear, '').trim();
                     if (triggerTwo.length === 0) {
-                        parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
+                        parserObject.triggers.push([[0, triggerOne], [0, triggerOne], 0]);
                     } else {
-                        parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
+                        parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo), triggerTwo], 0]);
                     }
-                }
+                }                
             } else {
                 parserObject.triggers.push(false);
             }
         }
 
+        
+        // Get the information on how many tags are nested into one tag order
+        // based on the order list
+        parserObject.orderNestedTags= [];
+        
+        var orderLevel = 0;
+        var tagSteps = 0;
+        var nestedTags = 0;
+        var processedOrders = [];
+        var nestedTagCount = 0;
+        
+        for (var order = 0; order < parserObject.orders.length; order++) {
+            
+            orderLevel = parserObject.orders[order];
+
+            // If we have an image, simply add it as single item
+            if (orderLevel < -1) {
+                parserObject.orderNestedTags.push(0);
+                continue;
+            }
+            
+            // If we have no open tag, dont push anything
+            if (orderLevel === -1) {
+                continue;
+            }
+            
+            tagSteps = 0;
+            previousTags = 0;
+            nestedTagCount = 0;
+            
+            // Check that we process every order level only once
+            if (processedOrders.indexOf(orderLevel) === -1) {
+                var previousTags = 0;
+                for (var index = order+1; index < parserObject.orders.length; index++) {
+                    
+                    // If the index is not the same, assume a previous tag
+                    if (parserObject.orders[index] !== orderLevel) {
+                        previousTags++;
+                    }
+                    tagSteps++;
+                    
+                    // If we reached the the same order level, the tag/orderLevel count is closed
+                    // else
+                    // if the index hits -1 or lower, the tag can be assumend to be closed
+                    if (parserObject.orders[index] === orderLevel) {
+                        break;
+                    } else if (parserObject.orders[index] <= -1) {
+                        break;
+                    }
+                }
+                
+                // Add the order to the processed order list
+                processedOrders.push(orderLevel);
+                
+                // Push the amount of included tags
+                nestedTagCount = tagSteps-previousTags;
+                parserObject.orderNestedTags.push( nestedTagCount );
+            }
+        }
+        
+        lg(parserObject);
+        
+        // After figuring out the how the tags are nested in orderNestedTags
+        // lets get the indexes for the data right, so we can start formatting
+        // not only by triggerwords, but also based on the position
+        // in the text to avoid triggering on triggerwords before the acutal tag
+        // has started
+
+        
+        
         // Summary
         /*
          lg(parserObject.tags);
@@ -545,10 +651,10 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
             // If we have open tags, dont reset to defaults but previous tag values
             if (openTags > 0) {
-                lg("setting style to: " + (resetLevel - 1) + ", from openTag: " + openTags);
+                //lg("setting style to: " + (resetLevel - 1) + ", from openTag: " + openTags);
                 setStyle(resetLevel - 1);
             } else {
-                lg("setting style to: default, from openTag: " + openTags);
+                //lg("setting style to: default, from openTag: " + openTags);
                 setDefaultStyle();
             }
         }
@@ -622,6 +728,13 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 var parserObject = simpleParse(activeLine.match(tagMatchPattern)[0]);
                 parserObjectStore.push(parserObject);
                 lg(parserObject);
+                
+                // Patch the first trigger data point so the formatter starts
+                // formatting from within the first tag
+                var tagsStartIndex = activeLine.indexOf(parserObject.tags);
+                if (tagsStartIndex > 0) {
+                    parserObject.dataPoints[0] = tagsStartIndex-parserObject.tags.length;
+                }
 
                 // Start cleaning up the linedata by clearing tags
                 for (var tag = 0; tag < parserObject.tags.length; tag++) {
@@ -647,7 +760,6 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
             // The formatter level and formatter switch
             var orderLevel = 0;
-            var formatLevel = 0;
             var useFormat = parserObject.tags.length !== 0 ? true : false;
             var openTags = [];
 
@@ -656,6 +768,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
             var tagKeyValues = parserObject.tagKeyValues;
             var triggers = parserObject.triggers;
             var orders = parserObject.orders;
+            var dataPoints = parserObject.dataPoints;
 
             // Sizes for looping and such
             var orderSize = parserObject.orders.length;
@@ -676,21 +789,23 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
 
             var fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontFamily];
             var wordSize = 0;
-
+            var wordIndex = 0;
 
             var triggerWordMatch = /[^\.\;\:\_\#\+\*\,\!]*/g;
+                        
             while (currentWord < wordCount) {
 
                 word = words[currentWord];
-                var triggerWord = word.match(triggerWordMatch)[0];
 
                 if (useFormat) {
+                    var triggerWord = word.match(triggerWordMatch)[0];
+                    
                     if (orderLevel >= orderSize) {
                         setDefaultStyle();
                         useFormat = false;
                     } else {
-                        lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1] + " --- fl: " + formatLevel);
-                        if (triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1]) {
+                        //lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1] + " --- fl: " + formatLevel);
+                        if ((triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1]) && (wordIndex+3) >= dataPoints[orderLevel] ) {
                             setStyle(orders[orderLevel]);
                             if (openTags.indexOf(orders[orderLevel]) === -1) {
                                 openTags.push(orders[orderLevel]);
@@ -704,6 +819,8 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                     }
                 }
 
+                // Keep the data sync
+                wordIndex += (word.length+1);
 
                 // Layout and draw the text
                 wordSize = Math.ceil(ci.measureText(word).width);
@@ -711,7 +828,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 var nextSize = currentSize + wordSize;
 
                 if (nextSize > sizeX) {
-                    stepY += lineHeightHint;
+                    stepY += fontDefaultLineHeight;
                     stepX = 0;
                     currentSize = 0;
                 } else {
@@ -732,7 +849,7 @@ function canvasLister(canvasItem, sourceFile, fontDefaultFamily, fontDefaultSize
                 if (useFormat) {
                     if (triggers[orderLevel] !== false) {
                         
-                        lg("OUT ---- word: "+ triggerWord + " --------- IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
+                        //lg("OUT ---- word: "+ triggerWord + " --------- IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
                         if (triggerWord === triggers[orderLevel][1][1]) {
                             
                             if (orders[orderLevel] > orders[orderLevel + 1]) {
