@@ -715,7 +715,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                             } else {
                                 fontSize = keyValues[keyItem][1];
                             }
-                            lineHeightHint = parseFloat(fontSize) * 1.05;
+                            lineHeightHint = parseFloat(fontSize);
 
                             if (fontLineHeight < lineHeightHint) {
                                 fontLineHeight = lineHeightHint;
@@ -754,9 +754,9 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
 
                 // Patch the first trigger data point so the formatter starts
                 // formatting from within the first tag
-                var tagsStartIndex = activeLine.indexOf(parserObject.tags);
-                if (tagsStartIndex > 0) {
-                    parserObject.dataPoints[0] = tagsStartIndex - parserObject.tags.length;
+                var tagStartIndex = activeLine.indexOf(parserObject.tags[0]);
+                if (tagStartIndex > 0) {
+                    parserObject.dataPoints[0] = tagStartIndex - parserObject.tags[0].length;
                 }
 
                 // Start cleaning up the linedata by clearing tags
@@ -861,9 +861,8 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                 var nextSize = currentSize + wordSize;
 
                 if (nextSize > sizeX) {
-
                     if (fontDefaultLineHeight < fontLineHeight) {
-                        stepY += lineHeightHint + 4;
+                        stepY += lineHeightHint;
                     } else {
                         stepY += fontDefaultLineHeight;
                     }
@@ -887,7 +886,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                     } else {
                         stepY += fontDefaultLineHeight;
                     }
-
+                            
                     //stepY += fontDefaultLineHeight;
                     setDefaultStyle();
                     stepX = 0;
