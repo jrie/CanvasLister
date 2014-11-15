@@ -3,22 +3,26 @@ canvas lister
 
 "Canvas lister" is work-in-progress with the idea to load markup data and convert/display this information on a HTML5 canvas element with styling as well as basic text alignment inside the canvas drawing area.
 
-Currently there are two versions.
+Note: The project was tested in Firefox, IE10 and Chrome to be working, with the exception that Chrome requires to be started with the parameter: "--allow-file-access-from-files", otherwise the Ajax request to load the source markup files will brake.
 
-The "Canvas Lister SimpleParse" version [rough testing version]
+There are several versions, explanation starting from initial to current development version
 
+The "canvasLister_simpleParse.js" version [first testing version]
 Which was written to only support single tag format elements, including a very "stupid" parser, but already displays the information on a canvas in a styled fashion. Nested tags are not supported by this version, but supports basic customization like:
 - General default font family, size and color
 - Tag formats like 'b', 'i', 'bi' for bold, italic and bolditalic typo and 'color="#hexValue"' to color text parts, please note that those can't be nested into each other with this version.
 More information can be found in the "source1.txt" - which gets loaded and demos the basic version features.
 
 
-The "Canvas Lister" version [work in progress version]
+The "canvasLister_improvedParse.js" version
+This version has a better tag parser and allows nesting of tags and formatting. Its using "source2.txt" and supports in addition to the simpleParse version:
+- Font sizes in in px and %, the latter one relative to the base font size set in the startup parameters
+- Mixing of tags, so there can be markups like 'bi color="#00aa22" size="120%'
+- Filtering of image data from markup and also parsing of general attributes for that image, display of image is not implemented in this version so
+- More accurate spacing when switching font sizes in a textline 
 
-This version has a better tag parser and allows nesting of tags. And is now the somehow smarter one. But does not yet have the "messy way of applying styles to the elements, which had of how the parser results are prepared, ordered and such. This version is using "source2.txt".
 
-Note: The project was only tested in Firefox. If you want to test it, in Chrome, please start Chrome with the parameter: "--allow-file-access-from-files", otherwise the Ajax request to load the source markup files will brake. But it simply might not work in this browser yet like it might not work in IE.
+The "canvasLister_phantom.js" version [hands on version]
+Its named phantom version because of a repeated iteration over the actual content to allow looking at complete lines to allow "justification" of text data. This is the recommended version if you want to have the justification feature, which looks pretty nice while working very nicely with the formatting of "source2.txt".
 
 If you have any questions or feedback, please let me know :)
-
-

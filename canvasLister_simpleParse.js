@@ -1,23 +1,22 @@
 "use strict";
-window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
 
-var hasConsole = typeof (window.console) !== "undefined" ? true : false;
+function canvasLister_simpleParse(canvasItemId, sourceFile, fontFamily, fontSize, fontWeight, backgroundColor, textColor, sourceText) {
 
-function lg(msg) {
-    if (hasConsole) {
-        console.log(msg);
+    window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
+
+    var hasConsole = typeof (window.console) !== "undefined" ? true : false;
+
+    function lg(msg) {
+        if (hasConsole) {
+            window.console.log(msg);
+        }
     }
-}
 
-//canvasLister("canvasItem1", "source1.txt", null, null, "#000", "bold", "#00aa00");
-//canvasLister("canvasItem2", "source1.txt", "Lithos Pro", "16", null, "#000033", "#dedede");
-function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, backgroundColor, textColor, text) {
-
-    var canvas = document.getElementById(canvasItem);
+    var canvas = document.getElementById(canvasItemId);
 
     // Checking canvas presence
     if (canvas === null) {
-        lg('Canvas item "' + canvasItem + '" cannot be found, doing nothing.');
+        lg('Canvas item "' + canvasItemId + '" cannot be found, doing nothing.');
         return;
     }
 
@@ -28,10 +27,10 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
     var sizeX = canvas.width - (offsetX * 2);
     var sizeY = canvas.height - (offsetY * 2);
 
-    // Check whether a sourcefile is given and if text then is provided which is required
+    // Check whether a sourcefile is given and if sourceText then is provided which is required
     if (sourceFile === null) {
-        if (typeof (text) === "undefined") {
-            lg('Source file is not provided, but no text either, canvas item id "' + canvasItem + '"');
+        if (typeof (sourceText) === "undefined") {
+            lg('Source file is not provided, but no sourceText either, canvas item id "' + canvasItemId + '"');
             return;
         }
     }
@@ -69,7 +68,12 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
 
     // Textloader using ajax
     function loadText() {
-        var dataLoader = new XMLHttpRequest();
+        //var dataLoader = new ActiveXObject("MSXML2.XMLHTTP.6.0");
+        if (typeof(ActiveXObject) !== "undefined") {
+            var dataLoader = new ActiveXObject("MSXML2.XMLHTTP.6.0");
+        } else {
+            var dataLoader = new XMLHttpRequest();
+        }
         dataLoader.onreadystatechange = function () {
             if (dataLoader.readyState === 4) {
                 textRawData = dataLoader.responseText;
@@ -106,15 +110,15 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
                     imgObject[keyValue[0]] = keyValue[1];
                 }
                 return ["img", imgObject];
-                
+
             } else {
                 var keyValue = format.replace('<', '').replace('>', '').replace(/["]/g, '').split("=");
             }
-            
+
             if (keyValue[0] === 'color') {
                 return [keyValue[0], keyValue[1].replace('"', ''), rawLine, rawWords[0], rawWords[rawWords.length - 1]];
             }
-            
+
             //lg(keyValue);
             return [];
         }
@@ -130,7 +134,7 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
         var stepX = 0;
         var hasFormat = false;
         var parserData = [];
-        
+
         ci.translate(offsetX, offsetY);
 
         while (line < lines) {
@@ -167,21 +171,21 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
             var parserItems = 0;
             var activeParser = -1;
             var wordSet = false;
-            
+
             while (currentWord < wordCount) {
 
                 word = words[currentWord];
 
-                // Set formatting for the text
+                // Set formatting for the sourceText
                 if (activeParser === -1) {
                     parserItems = parserData.length;
-                    
+
                     while (parserItems--) {
                         var parserItem = parserData[parserItems];
                         if (parserItem.length === 0) {
                             continue;
                         }
-                                                
+
                         if (word === parserItem[2]) {
                             //lg(parserItem);
                             activeParser = parserItems;
@@ -190,7 +194,7 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
                             //ci.textAlign = "right";
                             //ci.fillStyle = textColor;
                             switch (parserItem[0]) {
-                                
+
                                 case 'b':
                                     ci.font = 'normal normal bold ' + fontSize.toString() + 'px ' + fontFamily.trim();
                                     break;
@@ -207,19 +211,19 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
                                     ci.font = fontWeight.trim() + ' ' + fontSize.toString() + 'px ' + fontFamily.trim();
                                     break;
                             }
-                            
+
                             break;
                         }
-                         
+
                     }
-                     
+
                 }
-                
-                
-                              
 
 
-                var nextSize = currentSize + Math.ceil(ci.measureText(word+' ').width);
+
+
+
+                var nextSize = currentSize + Math.ceil(ci.measureText(word + ' ').width);
 
                 if (nextSize > sizeX) {
                     stepY += 18;
@@ -229,24 +233,24 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
                 } else {
                     currentWord++;
                     ci.fillText(word, stepX, stepY);
-                    stepX += Math.ceil(ci.measureText(word+' ').width);
+                    stepX += Math.ceil(ci.measureText(word + ' ').width);
                     currentSize = stepX;
                     wordSet = true;
-                    
+
                 }
 
                 if (currentWord === wordCount) {
                     stepY += 18;
                     stepX = 0;
                 }
-                
+
 
                 // Get out of formatting
                 // parserItems is already set
                 if (wordSet && activeParser !== -1) {
-                    parserItem = parserData[activeParser];                   
-                    if (word === parserItem[3] || word.substr(0, word.length-1) === parserItem[3]) {
-                        
+                    parserItem = parserData[activeParser];
+                    if (word === parserItem[3] || word.substr(0, word.length - 1) === parserItem[3]) {
+
                         parserData.splice(activeParser, 1);
 
                         ci.font = fontWeight.trim() + ' ' + fontSize.toString() + 'px ' + fontFamily.trim();
@@ -267,7 +271,7 @@ function canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, 
     if (sourceFile !== null) {
         loadText(sourceFile);
     } else {
-        processMarkup(text);
+        processMarkup(sourceText);
     }
 
 }

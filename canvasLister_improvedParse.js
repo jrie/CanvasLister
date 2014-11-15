@@ -1,8 +1,6 @@
 //'use strict';
 
-//canvasLister("canvasItem1", "source1.txt", null, null, "#000", "bold", "#00aa00");
-//canvasLister("canvasItem2", "source1.txt", "Lithos Pro", "16", null, "#000033", "#dedede");
-function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, text) {
+function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, soruceText) {
 
     var hasConsole = typeof (window.console) !== undefined ? true : false;
 
@@ -62,7 +60,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
 
     // Helper functions to check if userinput is valid
     function isValidNum(input) {
-        if (Number.isNaN(parseInt(input))) {
+        if (parseInt(input) === NaN) {
             return false;
         }
 
@@ -126,10 +124,10 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
     var sizeX = canvas.width - (offsetX * 2);
     var sizeY = canvas.height - (offsetY * 2);
 
-    // Check whether a sourcefile is given and if text then is provided which is required
+    // Check whether a sourcefile is given and if soruceText then is provided which is required
     if (sourceFile === null) {
-        if (typeof (text) === undefined) {
-            lg('Source file is not provided, but no text either, canvas item id "' + canvasItemId + '"');
+        if (typeof (soruceText) === undefined) {
+            lg('Source file is not provided, but no soruceText either, canvas item id "' + canvasItemId + '"');
             return;
         }
     }
@@ -172,7 +170,11 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
 
     // Textloader using ajax
     function loadText() {
-        var dataLoader = new XMLHttpRequest();
+        if (typeof (ActiveXObject) !== "undefined") {
+            var dataLoader = new ActiveXObject("MSXML2.XMLHTTP.6.0");
+        } else {
+            var dataLoader = new XMLHttpRequest();
+        }
         dataLoader.onreadystatechange = function () {
             if (dataLoader.readyState === 4) {
                 markupData = dataLoader.responseText;
@@ -563,7 +565,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
         // After figuring out the how the tags are nested in orderNestedTags
         // lets get the indexes for the data right, so we can start formatting
         // not only by triggerwords, but also based on the position
-        // in the text to avoid triggering on triggerwords before the acutal tag
+        // in the soruceText to avoid triggering on triggerwords before the acutal tag
         // has started
 
 
@@ -857,7 +859,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                 // Keep the data sync
                 wordIndex += (word.length + 1);
 
-                // Layout and draw the text
+                // Layout and draw the soruceText
                 wordSize = Math.ceil(ci.measureText(word).width);
                 spacerSize = Math.ceil(ci.measureText(' ').width);
                 var nextSize = currentSize + wordSize;
@@ -888,7 +890,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                     } else {
                         stepY += fontDefaultLineHeight;
                     }
-                            
+
                     //stepY += fontDefaultLineHeight;
                     setDefaultStyle();
                     stepX = 0;
@@ -938,7 +940,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
     if (sourceFile !== null) {
         loadText(sourceFile);
     } else {
-        processMarkup(text);
+        processMarkup(soruceText);
     }
 
 }
