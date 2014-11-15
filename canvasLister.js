@@ -719,6 +719,8 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
 
                             if (fontLineHeight < lineHeightHint) {
                                 fontLineHeight = lineHeightHint;
+                            } else {
+                                lineHeightHint = fontLineHeight;
                             }
 
                             break;
