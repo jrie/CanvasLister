@@ -41,9 +41,14 @@
             "text": {
                 "title": "This is the title/hover text provided by an image",
                 "description": "This text is shown as a description text for the image, it can be configured where it should be displayed using a simple syntax",
-                "loadLocal": "a url - if provided, we try to load the image from an url defining its src, please note that there is no check if the url has valid image data, this might change",
-                "borderWidth": "Bordersize in px",
-                "borderColor": "Bordercolor in Hex format",
+                "height": "The height of the image in pixel - required",
+                "width": "The width of the image in pixel - required",
+                "src": "the src url of the image, this is required, please note that there is no check if the src url is valid or not",
+                "borderwidth": "Bordersize in px",
+                "bordercolor": "Bordercolor in Hex format",
+                "fg": "Foreground color for the image description box as hex",
+                "bg": "Background color for the image description box as hex",
+                "box": "Defaults to \"under\" - no other options yet in planning, margin is calculated outside the image descripion box",
                 "margin": "Spacing around the image and its description",
                 "textFlow": "None/Left/Right - defines if text should flow around an the image, defaults to None, meaning the image is shown in its own horizontal space separated from text and markup",
                 "align": "Left/Center/Right - should the image be aligned on the left, center or right, defaults to center"
