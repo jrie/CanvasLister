@@ -1,6 +1,6 @@
 //'use strict';
-
-function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, soruceText) {
+var pages;
+function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, textAlignment, backgroundColor, fontDefaultColor, sourceText) {
 
     var hasConsole = typeof (window.console) !== undefined ? true : false;
 
@@ -124,10 +124,10 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
     var sizeX = canvas.width - (offsetX * 2);
     var sizeY = canvas.height - (offsetY * 2);
 
-    // Check whether a sourcefile is given and if soruceText then is provided which is required
+    // Check whether a sourcefile is given and if sourceText then is provided which is required
     if (sourceFile === null) {
-        if (typeof (soruceText) === undefined) {
-            lg('Source file is not provided, but no soruceText either, canvas item id "' + canvasItemId + '"');
+        if (typeof (sourceText) === undefined) {
+            lg('Source file is not provided, but no sourceText either, canvas item id "' + canvasItemId + '"');
             return;
         }
     }
@@ -160,6 +160,10 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
 
     if (fontDefaultShape === null) {
         fontDefaultShape = 'normal';
+    }
+
+    if (textAlignment === null || textAlignment !== 'justified') {
+        textAlignment = "left";
     }
 
     ci.font = fontDefaultShape + ' normal ' + fontDefaultWeight + ' ' + fontDefaultSize + ' ' + fontDefaultFamily;
@@ -293,8 +297,7 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
         } else {
             parserObject.tags = [];
         }
-
-
+        
         for (var tag = 0; tag < tagLength; tag++) {
 
             currentTag = parserObject.tags[tag];
@@ -351,9 +354,9 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
                         dataPoint += parserData.length;
                     }
                 }
-
                 openTags = [];
                 tag--;
+
                 continue;
             }
 
@@ -575,7 +578,7 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
         // After figuring out the how the tags are nested in orderNestedTags
         // lets get the indexes for the data right, so we can start formatting
         // not only by triggerwords, but also based on the position
-        // in the soruceText to avoid triggering on triggerwords before the acutal tag
+        // in the sourceText to avoid triggering on triggerwords before the acutal tag
         // has started
 
 
@@ -749,7 +752,19 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
         }
 
 
-        // Do the actual iterations
+        // Here we define if we make use of phantom mode to get justified sourceText right
+        var usePhantom = false;
+        var phantomLines = [];
+        var hadPhantom = false;
+
+        if (textAlignment === "justified") {
+            usePhantom = true;
+            hadPhantom = false;
+        }
+
+        pages = [];
+
+        // Do the actual iterations and draw the sourceText
         while (line < lines) {
             activeLine = markupParts[line];
 
@@ -762,15 +777,21 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
 
 
             if (hasFormat) {
-                var parserObject = simpleParse(activeLine.match(tagMatchPattern)[0]);
-                parserObjectStore.push(parserObject);
-                lg(parserObject);
+                if (parserObjectStore.length < lines) {
+                    var parserObject = simpleParse(activeLine.match(tagMatchPattern)[0]);
 
-                // Patch the first trigger data point so the formatter starts
-                // formatting from within the first tag
-                var tagStartIndex = activeLine.indexOf(parserObject.tags[0]);
-                if (tagStartIndex > 0) {
-                    parserObject.dataPoints[0] = tagStartIndex - parserObject.tags[0].length;
+                    // Patch the first trigger data point so the formatter starts
+                    // formatting from within the first tag
+                    var tagStartIndex = activeLine.indexOf(parserObject.tags[0]);
+                    if (tagStartIndex > 0) {
+                        parserObject.dataPoints[0] = tagStartIndex - parserObject.tags[0].length;
+                    }
+
+                    parserObjectStore.push(parserObject);
+
+                } else {
+                    var parserObject = parserObjectStore[line];
+                    lg(parserObject);
                 }
 
                 // Start cleaning up the linedata by clearing tags
@@ -796,9 +817,12 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
                 parserObject.tagKeyValues = {};
                 parserObject.triggers = [];
                 parserObject.dataPoints = [];
+                if (parserObjectStore.length < lines) {
+                    parserObjectStore.push(parserObject);
+                }
             }
 
-            var words = activeLine.split(' ');
+            var words = activeLine.replace('\r', '').split(' ');
             var wordCount = words.length;
 
             var currentWord = 0;
@@ -840,18 +864,44 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
 
             var triggerWordMatch = /[^\.\;\:\_\#\+\*\,\!]*/g;
 
+            if (usePhantom && !hadPhantom) {
+                var phantomIndex = 0;
+            }
+
+
             while (currentWord < wordCount) {
 
-                word = words[currentWord];
+                if (!hadPhantom) {
+                    word = words[currentWord];
+
+                } else {
+                    if (phantomData[phantomIndex] === '|' || phantomData[phantomIndex] === '-') {
+                        // Reset stepX to zero, as we have a forced line brake
+                        // from phantomData
+                        stepX = 0;
+                        phantomIndex++;
+
+                        // Add vertical spacing according to general rules
+                        if (fontDefaultLineHeight < fontLineHeight) {
+                            stepY += lineHeightHint;
+                        } else {
+                            stepY += fontDefaultLineHeight;
+                        }
+
+                        if (!useFormat) {
+                            fontLineHeight = fontDefaultLineHeight;
+                        }
+                    }
+                    word = phantomData[phantomIndex][1];
+                }
 
                 if (useFormat) {
                     var triggerWord = word.match(triggerWordMatch)[0];
-
                     if (orderLevel >= orderSize) {
                         setDefaultStyle();
                         useFormat = false;
                     } else {
-                        //lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1] + " --- fl: " + formatLevel);
+                        //lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1]);
                         if ((triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1]) && (wordIndex + 3) >= dataPoints[orderLevel]) {
                             setStyle(orders[orderLevel]);
                             if (openTags.indexOf(orders[orderLevel]) === -1) {
@@ -869,12 +919,12 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
                 // Keep the data sync
                 wordIndex += (word.length + 1);
 
-                // Layout and draw the soruceText
+                // Layout and draw the sourceText
                 wordSize = Math.ceil(ci.measureText(word).width);
                 spacerSize = Math.ceil(ci.measureText(' ').width);
                 var nextSize = currentSize + wordSize;
 
-                if (nextSize > sizeX) {
+                if (!hadPhantom && nextSize > sizeX) {
                     if (fontDefaultLineHeight < fontLineHeight) {
                         stepY += lineHeightHint;
                     } else {
@@ -885,12 +935,35 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
                         fontLineHeight = fontDefaultLineHeight;
                     }
 
+                    if (usePhantom) {
+                        phantomLines.push("-");
+                        //lg(phantomLines);
+                    }
+
                     stepX = 0;
                     currentSize = 0;
+                    continue;
                 } else {
                     currentWord++;
-                    ci.fillText(word, stepX, stepY + fontLineHeight);
-                    stepX += (wordSize + spacerSize);
+                    if (!usePhantom) {
+                        if (stepY > canvas.height - 100) {
+                            pages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
+                            ci.clearRect(-10, -10, canvas.width + 20, canvas.height + 20);
+                            stepX = 0;
+                            stepY = 0;
+                        }
+                        if (hadPhantom) {
+                            ci.fillText(word, stepX, stepY + fontLineHeight);
+                            stepX += phantomData[phantomIndex][0];
+                            phantomIndex++;
+                        } else {
+                            stepX += (wordSize + spacerSize);
+                        }
+                    } else {
+                        phantomLines.push([wordSize, spacerSize, word]);
+                        stepX += (wordSize + spacerSize);
+                    }
+
                     currentSize = stepX;
                 }
 
@@ -899,6 +972,10 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
                         stepY += fontLineHeight;
                     } else {
                         stepY += fontDefaultLineHeight;
+                    }
+
+                    if (usePhantom) {
+                        phantomLines.push("|");
                     }
 
                     //stepY += fontDefaultLineHeight;
@@ -942,7 +1019,80 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
             }
 
             line++;
+
+            // Switch off phantom drawing mode and start the actual drawing routine
+            if (usePhantom && line >= lines) {
+                line = 0;
+                stepX = 0;
+                stepY = 0;
+                usePhantom = false;
+                hadPhantom = true;
+
+                var phantomData = [];
+                var currentItem;
+                var availableWidth = canvas.width;
+                var processedItems = 0;
+                var phantomLength = phantomLines.length;
+
+                for (var textItem = 0; textItem < phantomLength; textItem++) {
+                    currentItem = phantomLines[textItem];
+                    if (currentItem === '|') {
+
+                        // Add the data for non complete lines which not
+                        // to force to be justified as the sourceText fits without justification
+                        var lastItem = textItem - 1;
+                        processedItems--;
+
+                        for (var item = 0; item < processedItems; item++) {
+                            var subItem = phantomLines[lastItem - (processedItems - item)];
+                            phantomData.push([subItem[0] + subItem[1], subItem[2]]);
+                        }
+
+                        phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2]]);
+
+                        availableWidth = canvas.width;
+                        processedItems = 0;
+                        continue;
+                    } else if (currentItem !== '-') {
+                        availableWidth -= currentItem[0];
+                        processedItems++;
+                        continue;
+                    } else if (currentItem === '-') {
+                        var lastItem = textItem - 1;
+
+                        // Reduce the width by 20, because we have the
+                        // canvas.translate by 10 on x the x axis
+                        availableWidth -= 20;
+
+                        // Calculate the spacing we can give to each item
+                        processedItems--;
+                        var itemSpace = parseFloat((availableWidth / (processedItems)).toPrecision(3));
+
+
+                        for (var item = 0; item < processedItems; item++) {
+                            var subItem = phantomLines[lastItem - (processedItems - item)];
+                            phantomData.push([subItem[0] + itemSpace, subItem[2]]);
+                        }
+
+                        // Add last item without any addional spacing
+                        phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2]]);
+
+                        // Push a line break, so the formatter knows where to
+                        // make a cut in the justified sourceText
+                        phantomData.push("-");
+
+                        processedItems = 0;
+                        availableWidth = canvas.width;
+                        continue;
+                    }
+                }
+            }
         }
+        if (pages.length > 0) {
+            pages.push(ci.getImageData(0, 0, canvas.width, canvas.height - 60));
+        }
+        
+        ci.putImageData(pages[0], 0, 0);
     }
 
 
@@ -950,7 +1100,7 @@ function canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily,
     if (sourceFile !== null) {
         loadText(sourceFile);
     } else {
-        processMarkup(soruceText);
+        processMarkup(sourceText);
     }
 
 }

@@ -1,6 +1,6 @@
 //'use strict';
 
-function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, textAlignment, backgroundColor, fontDefaultColor, sourceText) {
+function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, textAlignment, backgroundColor, fontDefaultColor, sourceText) {
 
     var hasConsole = typeof (window.console) !== undefined ? true : false;
 
@@ -75,6 +75,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
                 break;
             case 3:
                 // This is the override for values, we cant check
+                // like the image title and description
                 return true;
                 break;
         }
@@ -292,7 +293,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
                 if (keyValues !== null) {
                     for (var keyValue = 0; keyValue < keyValues.length; keyValue += 2) {
                         if (checkKeyValuePair("image", [keyValues[keyValue], keyValues[keyValue + 1]])) {
-                            imageObject[keyValues[keyValue]] = keyValues[keyValue + 1];
+                            imageObject[keyValues[keyValue].toLowerCase()] = keyValues[keyValue + 1];
                         }
                     }
                 }
@@ -345,6 +346,16 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
 
             //lg('tag: '+currentTag);
             //lg('current: '+currentIndex+' -- next: '+nextIndex+' -- close: '+closingIndex);
+            
+            // Check the case if we have a tag followed by the same tag
+            if (currentIndex === 0 && nextIndex === 0) {
+                parserData = formatData.substring(currentIndex + currentTag.length, closingIndex);
+                parserObject.data.push(parserData);
+                parserObject.orders.push(tag);
+                formatData = formatData.substr(closingIndex + 3);
+                parserObject.dataPoints.push(dataPoint);
+                continue;
+            }
 
             // If the tag start not a zero, we have non-tagged data
             if (currentIndex !== 0) {
@@ -409,7 +420,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
                     formatData = formatData.substr((openTags.length - 1) * 3);
-                    openTags = openTags.slice(openTags.length - 1, 1);
+                    openTags = [];
                 }
 
                 parserObject.dataPoints.push(dataPoint);
@@ -621,7 +632,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
          */
         return parserObject;
     }
-
+    
     // Markup processor
     var hasFormatCheck = /<[^/]*>.*<\/>/g;
     var tagMatchPattern = /<[^<\s]{0,}.*[<\/>]+/g;
@@ -767,8 +778,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
                 ci.font = fontStyle.join(' ');
             }
         }
-
-
+       
         // Here we define if we make use of phantom mode to get justified sourceText right
         var usePhantom = false;
         var phantomLines = [];
@@ -779,6 +789,26 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
             hadPhantom = false;
         }
 
+        // This function stores img data as well as coordinates and size
+        // from the markup, and draw the images once they are ready onto
+        // the canvas
+        var phantomImages = [];
+        var phantomImageIds = [];
+        var imgCounter = 0;
+        function drawImages() {
+            if (imgCounter >= phantomImages.length) {
+                return;
+            }
+            var phantomImg = phantomImages[imgCounter];
+            if (phantomImg[1].width === 0 || phantomImg[1].height === 0) {
+                window.requestAnimationFrame(drawImages);
+                return;
+            } else {
+                ci.drawImage(phantomImg[1], phantomImg[2], phantomImg[3], phantomImg[4], phantomImg[5]);
+                imgCounter++;
+            }
+        }
+        
         // Do the actual iterations and draw the sourceText
         while (line < lines) {
             activeLine = markupParts[line];
@@ -879,156 +909,128 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
             var wordIndex = 0;
 
             var triggerWordMatch = /[^\.\;\:\_\#\+\*\,\!]*/g;
-
             if (usePhantom && !hadPhantom) {
                 var phantomIndex = 0;
             }
-
+           
             while (currentWord < wordCount) {
                 // Check if we only have a single word, most likely this
                 // will be the result of one or more image tags
-                if (wordCount === 1) {
-                    if (parserObject.imageStore.length !== 0) {
+                if (parserObject.imageStore.length !== 0 && wordCount === 1 && ((hadPhantom) || (!usePhantom))) {
+                    var availableWidth = canvas.width - 20;
+                    /*
+                     var imageObject = {};
+                     imageObject.title = '';
+                     imageObject.description = '';
+                     imageObject.fg = '#000000';
+                     imageObject.bg = '#ffffff';
+                     imageObject.src = 'none';
+                     imageObject.height = 'auto';
+                     imageObject.width = 'auto';
+                     imageObject.margin = '5px';
+                     imageObject.align = "center";
+                     imageObject.borderwidth = "0px";
+                     imageObject.bordercolor = "#000000";
+                     imageObject.id = imageOrder;
+                     */
+                    var currentImage = {};
+                    for (var item = 0; item < imageStore.length; item++) {
+                        currentImage = imageStore[item];
+                        var margin = parseInt(currentImage.margin);
+                        stepY += margin;
 
-                        // Image loading tests....
-
-                        /*
-                         if (document.getElementById("phantomImage") === null)  {
-                         var img = document.createElement("img");
-                         img.id = "phantomImage";
-                         //img.style.display = "none";
-                         img.src = imageStore[0].src;
-                         document.body.appendChild(img);
-                         var phantomImage = document.getElementById("phantomImage")
-                         var loaderSize = 30000000000;
-
-                         function createLoad() {
-                         if (loaderSize > 0) {
-                         loaderSize--;
-                         window.requestAnimationFrame(createLoad);
-                         }
-                         }
-                         createLoad();
-
-                         }
-                         */
-                        var imageLoading = false;
-                        function loadImage(imageFile) {
-                            if (typeof (ActiveXObject) !== "undefined") {
-                                var imgLoader = new ActiveXObject("MSXML2.XMLHTTP.6.0");
-                            } else {
-                                var imgLoader = new XMLHttpRequest();
-                            }
-                            imgLoader.onreadystatechange = function () {
-                                lg("in loader")
-                                if (imgLoader.readyState === 4) {
-                                    lg("in loader.. loading finished.")
-                                    imageLoading = false;
-                                    lg("image loaded: " + imageFile);
-                                    return true;
+                        if (currentImage.align === "center") {
+                            if (item > 0) {
+                                if (imageStore[item - 1].align !== "center") {
+                                    var previousImage = imageStore[item - 1];
+                                    stepY += (parseInt(previousImage.margin) + parseInt(previousImage.height));
                                 }
-                            };
-                            imgLoader.open('GET', imageFile);
-                            imgLoader.send();
-                        }
-
-                        function isLoading() {
-                            lg("is image loading? " + imageLoading)
-                            if (imageLoading) {
-
-                                lg("loading")
-                                window.requestAnimationFrame(isLoading);
                             }
-                        }
-                        for (var item = 0; item < imageStore.length; item++) {
-                            imageLoading = true;
-                            currentImage = imageStore[item];
-                            var img = document.createElement("img");
-                            //img.style.display = "none";
-                            img.id = "phantomImage" + item;
-                            img.src = currentImage.src;
-                            document.body.appendChild(img);
-                            loadImage(currentImage.src);
-                            lg("outside loader")
-                            window.requestAnimationFrame(isLoading);
-                        }
+                            stepX = (availableWidth - parseInt(currentImage.width)) / 2;
 
-
-
-
-
-                        var availableWidth = canvas.width - 20;
-                        /*
-                         var imageObject = {};
-                         imageObject.title = '';
-                         imageObject.description = '';
-                         imageObject.fg = '#000000';
-                         imageObject.bg = '#ffffff';
-                         imageObject.src = 'none';
-                         imageObject.height = 'auto';
-                         imageObject.width = 'auto';
-                         imageObject.margin = '5px';
-                         imageObject.align = "center";
-                         imageObject.borderwidth = "0px";
-                         imageObject.bordercolor = "#000000";
-                         imageObject.id = imageOrder;
-                         */
-                        var currentImage = {};
-                        for (var item = 0; item < imageStore.length; item++) {
-                            currentImage = imageStore[item];
-                            var margin = parseInt(currentImage.margin);
-                            stepY += margin;
-
-                            if (currentImage.align === "center") {
-                                if (item > 0) {
-                                    if (imageStore[item - 1].align !== "center") {
-                                        var previousImage = imageStore[item - 1];
+                        } else {
+                            if (item > 0) {
+                                if (imageStore[item - 1].align === "left") {
+                                    var previousImage = imageStore[item - 1];
+                                    stepX += (parseInt(previousImage.margin) + parseInt(previousImage.width));
+                                    if (stepX > availableWidth || (stepX + parseInt(currentImage.width)) > availableWidth) {
+                                        stepX = 0;
                                         stepY += (parseInt(previousImage.margin) + parseInt(previousImage.height));
                                     }
-                                }
-                                stepX = (availableWidth - parseInt(currentImage.width)) / 2;
-
-                            } else {
-                                if (item > 0) {
-                                    if (imageStore[item - 1].align === "left") {
-                                        var previousImage = imageStore[item - 1];
-                                        stepX += (parseInt(previousImage.margin) + parseInt(previousImage.width));
-                                        if (stepX > availableWidth || (stepX + parseInt(currentImage.width)) > availableWidth) {
-                                            stepX = 0;
-                                            stepY += (parseInt(previousImage.margin) + parseInt(previousImage.height));
-                                        }
-                                    } else {
-                                        stepX = 0;
-                                    }
                                 } else {
-                                    if (currentImage.align === "left") {
-                                        stepX = 0;
-                                    }
+                                    stepX = 0;
                                 }
-                            }
-
-                            var custom_img = new Image();
-                            //phantomImage.src = currentImage.src;
-                            //custom_img.src = currentImage.src;
-                            var phantomImage = document.getElementById("phantomImage" + item);
-                            ci.drawImage(phantomImage, stepX, stepY, parseInt(currentImage.width), parseInt(currentImage.height));
-                            //document.body.removeChild(phantomImage);
-                            //img.src = currentImage.src;
-
-
-
-                            stepY -= margin;
-                            if (item === imageStore.length - 1 || currentImage.align === "center") {
-                                stepY += ((margin * 2) + parseInt(currentImage.height));
+                            } else {
+                                if (currentImage.align === "left") {
+                                    stepX = 0;
+                                }
                             }
                         }
-                        stepX = 0;
 
-                        currentWord++;
+                        // Add image to the stack for further drawing after script execution
+                        var phantomImage = new Image();
+                        phantomImage.src = currentImage.src;
+                        if (phantomImageIds.indexOf([currentImage.id, line]) === -1) {
+                            phantomImageIds.push([currentImage.id, line]);
+                            phantomImages.push([currentImage, phantomImage, stepX, stepY, parseInt(currentImage.width), parseInt(currentImage.height)]);
+                        }
+                        
+                        // Add the description text underneath the image
+                        stepY += parseInt(currentImage.height);
+                        var blockSize = [0, 0];
+                        ci.lineWidth = 0;
+                        if (currentImage.description !== '') {
+                            blockSize = [parseInt(currentImage.width), 25];
+                            
+                            // Test if we can fit all the text inside the description box
+                            
+                            // Draw the outline for the image if present
+                            if (parseInt(currentImage.borderwidth) !== 0) {
+                                ci.lineWidth = parseInt(currentImage.borderwidth);
+                                ci.strokeStyle = currentImage.bordercolor;
+                                ci.beginPath();
+                                ci.rect(stepX, stepY-parseInt(currentImage.height), parseInt(currentImage.width), parseInt(currentImage.height)+blockSize[1]);
+                                ci.stroke();
+                                ci.closePath();
+                            }
+                            
+                            // Draw the description box underneath the image
+                            ci.fillStyle = currentImage.bg;
+                            ci.fillRect(stepX, stepY, parseInt(currentImage.width), blockSize[1]);
+                            
+                            // Draw the text inside the description box
+                            ci.fillStyle = currentImage.fg;
+                            ci.fillText(currentImage.description, stepX+10, stepY+16);
+                        } else {
+                            // Draw the outline for the image if present
+                            if (parseInt(currentImage.borderwidth) !== 0) {
+                                ci.lineWidth = parseInt(currentImage.borderwidth);
+                                ci.strokeStyle = currentImage.bordercolor;
+                                ci.beginPath();
+                                ci.rect(stepX, stepY-parseInt(currentImage.height), parseInt(currentImage.width), parseInt(currentImage.height)+blockSize[1]);
+                                ci.stroke();
+                                ci.closePath();
+                            }
+                        }
+                        
+                        stepY += ci.lineWidth;
+                        
+                        stepY -= parseInt(currentImage.height);
+
+                        stepY -= margin;
+                        if (item === imageStore.length - 1 || currentImage.align === "center") {
+                            stepY += ((margin * 2) + parseInt(currentImage.height));
+                            if (currentImage.description !== '') {
+                                stepY += blockSize[1]+margin;
+                            }
+                        }
+
                         continue;
                     }
+                    stepX = 0;
+                    currentWord++;
                 }
-
+                
                 if (!hadPhantom) {
                     word = words[currentWord];
 
@@ -1084,7 +1086,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
                 spacerSize = Math.ceil(ci.measureText(' ').width);
                 var nextSize = currentSize + wordSize;
 
-                if (!hadPhantom && nextSize > sizeX) {
+                if (!hadPhantom && nextSize >= sizeX) {
                     if (fontDefaultLineHeight < fontLineHeight) {
                         stepY += lineHeightHint;
                     } else {
@@ -1102,6 +1104,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
 
                     stepX = 0;
                     currentSize = 0;
+                    continue;
                 } else {
                     currentWord++;
                     if (!usePhantom) {
@@ -1173,7 +1176,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
             }
 
             line++;
-
+            
             // Switch off phantom drawing mode and start the actual drawing routine
             // after calculating the optimal spacing for the text items
             if (usePhantom && line >= lines) {
@@ -1214,7 +1217,6 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
                         continue;
                     } else if (currentItem === '-') {
                         var lastItem = textItem - 1;
-
                         // Reduce the width by 20, because we have the
                         // canvas.translate by 10 on x the x axis
                         availableWidth -= 20;
@@ -1223,12 +1225,11 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
                         processedItems--;
                         var itemSpace = parseFloat((availableWidth / (processedItems)).toPrecision(3));
 
-
                         for (var item = 0; item < processedItems; item++) {
                             var subItem = phantomLines[lastItem - (processedItems - item)];
                             phantomData.push([subItem[0] + itemSpace, subItem[2]]);
                         }
-
+                        
                         // Add last item without any addional spacing
                         phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2]]);
 
@@ -1242,7 +1243,10 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
                     }
                 }
             }
+            
+            window.requestAnimationFrame(drawImages);
         }
+        
     }
 
 

@@ -319,6 +319,16 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
             //lg('tag: '+currentTag);
             //lg('current: '+currentIndex+' -- next: '+nextIndex+' -- close: '+closingIndex);
 
+            // Check the case if we have a tag followed by the same tag
+            if (currentIndex === 0 && nextIndex === 0) {
+                parserData = formatData.substring(currentIndex + currentTag.length, closingIndex);
+                parserObject.data.push(parserData);
+                parserObject.orders.push(tag);
+                formatData = formatData.substr(closingIndex + 3);
+                parserObject.dataPoints.push(dataPoint);
+                continue;
+            }
+
             // If the tag start not a zero, we have non-tagged data
             if (currentIndex !== 0) {
                 //lg("in non tagged data");
@@ -932,6 +942,7 @@ function canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontD
 
                     stepX = 0;
                     currentSize = 0;
+                    continue;
                 } else {
                     currentWord++;
                     if (!usePhantom) {
