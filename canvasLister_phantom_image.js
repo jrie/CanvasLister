@@ -420,7 +420,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
                     formatData = formatData.substr((openTags.length - 1) * 3);
-                    openTags = [];
+                    openTags = openTags.slice(openTags.length - 1, 1);
                 }
 
                 parserObject.dataPoints.push(dataPoint);
@@ -634,7 +634,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
     }
     
     // Markup processor
-    var hasFormatCheck = /<[^/]*>.*<\/>/g;
+    var hasFormatCheck = /<[^/]*>.*<\/>/;
     var tagMatchPattern = /<[^<\s]{0,}.*[<\/>]+/g;
     var closingMatch = /<\/>/g;
     function processMarkup(markupData) {
@@ -836,7 +836,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
 
                 } else {
                     var parserObject = parserObjectStore[line];
-                    lg(parserObject);
+                    //lg(parserObject);
                 }
 
                 // Start cleaning up the linedata by clearing tags
@@ -1114,6 +1114,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                             stepX += phantomData[phantomIndex][0];
                             phantomIndex++;
                         } else {
+                            ci.fillText(word, stepX, stepY + fontLineHeight);
                             stepX += (wordSize + spacerSize);
                         }
                     } else {

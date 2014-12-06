@@ -9,7 +9,6 @@
         <canvas style="float: left; background-color:#000033; margin: 12px;" id="canvasItem2" height="980" width="550"></canvas>
         <canvas style="float: left; background-color:#000033; margin: 12px;" id="canvasItem3" height="980" width="250"></canvas>
         <script type="text/javascript" src="canvasLister_simpleParse.js"></script>
-        <script type="text/javascript" src="canvasLister_improvedParse.js"></script>
         <script type="text/javascript" src="canvasLister_phantom_image.js"></script>
         <script type="text/javascript" src="canvasLister_phantom_pagination.js"></script>
         <script type="text/javascript">
@@ -23,42 +22,8 @@
             canvasLister_phantom_image("canvasItem2", "source3.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
             
             // Similar to the image version, without image support but pagination
+            //canvasLister_phantom_pagination("canvasItem3", "source4.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
             canvasLister_phantom_pagination("canvasItem3", "source4.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
-
-            // Used for pagination
-            var activePage = -1;
-
-            document.addEventListener("keyup", function (evt) {
-                evt.preventDefault();
-
-                // This code block is used for the paginated, without image support, version
-                if (evt.keyCode === 39) {
-                    activePage++;
-                    if (activePage > pages.length - 1) {
-                        activePage = 0;
-                    }
-                    document.getElementById("canvasItem3").getContext("2d").putImageData(pages[activePage], 0, 0);
-                    return;
-                } else if (evt.keyCode === 37) {
-                    activePage--;
-                    if (activePage < 0) {
-                        activePage = pages.length - 1;
-                    }
-                    document.getElementById("canvasItem3").getContext("2d").putImageData(pages[activePage], 0, 0);
-                    return;
-                }
-
-                // Increasing or descreasing size by pressing the num pad plus minus
-                if (evt.keyCode === 107) {
-                    document.getElementById("canvasItem3").width += 15;
-                } else if (evt.keyCode === 109) {
-                    document.getElementById("canvasItem3").width -= 15;
-                } else {
-                    return;
-                }
-
-                canvasLister_phantom_pagination("canvasItem3", "source3.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
-            });
         </script>
     </body>
 
