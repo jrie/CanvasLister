@@ -2,8 +2,12 @@
     "author": "jrie",
     "Description": "Canvas Lister Guide, please see the notes for the different versions",
     "General": {
+        "General features": {
+            "Pagination": "Click the canvas to activate navigation using the arrow keys, implemented in the pagination version",
+            "Canvas resize": "Left clicking the canvas, then to enlarge or shrink the canvas/read area width, use plus or minus on the numpad"
+        },
         "Using guide": {
-            "General": " The lister can be added by calling \"canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, text);",
+            "General": " The lister can be added by calling \"canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, none\\null\\sourceText);",
             "cavansElement": "Defines which canvas element id we want to display markup information on",
             "sourceFile": "References the source file from which our textmarkup is loaded from, this is loaded using Ajax, set to null, if you want to to provide a string using the \"text\" parameter",
             "font": "Which font-family, by default, should be used to display text. In example: \"Helvetica\", defaults to sans-serif if set to null",
@@ -12,46 +16,47 @@
             "textAlignment": "Defaults to \"left\" but can be set to \"justified\" to justify the text, if set to null default to \"left\"",
             "bg": "Hex value for the canvas background, defaults to white/#ffffff if set to null",
             "fg": "Hex value for the text color to use if not defined otherwise, defaults to black/#000000 if set to null",
-            "sourceText": "Not yet tested/implemented - if the text is provided, and the sourceFile parameter set to zero, we get our text information via the string provided here; this can include syntax as described later",
-            "usePaging": "Not implemented yet - if any element like text would overflow the canvas in height, we start using pagination",
-            "pagingHeight": "Not implemented yet - Height in pixels or percentage on which the text should be splitted in pages"
+            "sourceText": "Tested working - if the text is provided, and the sourceFile parameter is set to zero, we get our text information via the string provided here; this can include markup",
+            "usePaging": "If any element like text would overflow the canvas in height, we start using pagination, the implementation started in the \"canvas_phantom_pagination.js\" version",
+            "pagingHeight": "Not implemented yet - Height in pixels or percentage on which the text should overflow into a new page"
         },
         "Syntax/tag elements": {
             "General Information": "All of the following elements have custom attributes and different ways to display or format them, please refer to the Elements section for details",
             "text": "Everything which is not declared otherwise is threaded as text, but which can be formatted using style tags",
-            "img": "Basic implementation started, not yet completed - <img> - Defines an image using \"<img>\" which should be displayed at this location, inside or outside of the text, has addional options, doesnt have a closing tag!",
+            "img": "Basic implementation in 'canvaslister_phantom_image' started, not yet completed - <img> - Defines an image using \"<img>\" which should be displayed at this location, inside or outside of the text, has addional options, doesnt have a closing tag!",
             "video": "Not implemented yet - <video> - defines a video entry which should be displayed, similar to an img element and might requrie additional parameter to work"
         }
     },
     "Elements": {
-        "General": "Each element can be defined using a proper enclosing tag",
+        "General": "Text tags should be enclosing the text, imgs arent enclosed",
+        "Example": "Regular text and <b color=\"#00AA00\" size=\"140%\">bolded text, in green, displayed in 140% percent size of the base text size</>",
         "text": {
+            "Example": "<b color=\"#00AA00\" size=\"14px\">Test in green 14 pixels<color=\"#AA0000\" size=\"16px\">16 px height text</></>",
             "Defined by": "An example text. With <i>italic</> formatting or both <bi>bold italic</> or <size=\"14px\">Size in pixel</>",
             "color": "color=\"#FF0000\" - tells the color of the text should be red, provided in a hex value, defaults to black/#000000",
             "i": "Tells the text should be shown in italic, example <i>Italic text<i>",
             "b": "If given, the text is shown in bold, which also equal \"font-weight: bold\", in example <b>Im bold text</>",
             "bi": "If present, the text is shown in bold and italic - example <bi> bold italic text</>",
             "font": "Not implemented yet - the name of the font family to use for this font, defaults to what has been provided in the main parameter",
-            "weight": "Not implemented yet",
-            "Advanced example": "<b color=\"#00AA00\" size=\"14px\">Test in green 14 pixels<color=\"#AA0000\" size=\"16px\">16 px height text</></>"
-
+            "weight": "Not implemented yet"
         },
         "img": {
             "General": "Feature not yet implemented, to be done",
+            "Example": "<img src=\"myImage.png\" width=\"30px\" height=\"30px\" align=\"left\" borderwidth=\"2px\" bordercolor=\"#fff\" desc=\"My happy description text\" fg=\"#fff\" bg=\"#333\"",
             "text": {
                 "title": "This is the title/hover text provided by an image",
                 "description": "This text is shown as a description text for the image, it can be configured where it should be displayed using a simple syntax",
-                "height": "The height of the image in pixel - required",
+                "height": "The height of the image in pixel - required as no automated detection for resizing can be done at the moment",
                 "width": "The width of the image in pixel - required",
                 "src": "the src url of the image, this is required, please note that there is no check if the src url is valid or not",
+                "align": "Left/Center/Right - should the image be aligned on the left, center or right, defaults to center, left aligned images float on the same virtual space",
                 "borderwidth": "Bordersize in px",
                 "bordercolor": "Bordercolor in Hex format",
+                "margin": "Spacing around the image and its description",
                 "fg": "Foreground color for the image description box as hex",
                 "bg": "Background color for the image description box as hex",
                 "box": "Defaults to \"under\" - no other options yet in planning, margin is calculated outside the image descripion box",
-                "margin": "Spacing around the image and its description",
-                "textFlow": "None/Left/Right - defines if text should flow around an the image, defaults to None, meaning the image is shown in its own horizontal space separated from text and markup",
-                "align": "Left/Center/Right - should the image be aligned on the left, center or right, defaults to center"
+                "textflow": "Not implemented yet - None/Left/Right - defines if text should flow around an the image, defaults to None, meaning the image is shown in its own horizontal space separated from text and markup",
             }
         }
     }
