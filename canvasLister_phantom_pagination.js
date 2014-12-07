@@ -48,7 +48,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 }
                 break;
             case 2:
-                if (isValidText(value)) {
+                if (isValidTag(value)) {
                     return true;
                 }
                 break;
@@ -86,7 +86,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
         return true;
     }
 
-    function isValidText(input) {
+    function isValidTag(input) {
         if (validTags.indexOf(input) !== -1) {
             return true;
         }
@@ -185,22 +185,22 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 processMarkup(markupData);
             }
         };
-        
+
         // Prepare error message if the source could not be loaded
         var stepY = 20;
         ci.fillText("If you see this message,", 10, stepY);
         stepY += fontDefaultLineHeight;
-        ci.fillText('the source file "'+sourceFile+'"', 10, stepY);
+        ci.fillText('the source file "' + sourceFile + '"', 10, stepY);
         stepY += fontDefaultLineHeight;
         ci.fillText("could not be loaded !", 10, stepY);
-                
+
         dataLoader.open('GET', sourceFile);
         dataLoader.send();
-        
+
         // Clear the error message from canvas
-        ci.clearRect(0,0, 300,100);
+        ci.clearRect(0, 0, 300, 100);
     }
-    
+
     // Clear and fill for pagination
     function clearAndFill() {
         var previousFill = ci.fillStyle;
@@ -216,8 +216,8 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
     var formatTagMatch = /<[^\/][\w\d\s\=\"\#\'\*\%]*>/g;
     var imgMatch = /<img[^<]*/g;
     var imgReplace = /\bimg\b/g;
-    var imgTitleMatch = /title=[\"\'][^\"]*[\"\']{1,2}/gi;
-    var imgDescriptionMatch = /description=[\"\'][^\"]*[\"\']{1,2}/gi;
+    var imgTitleMatch = /title=[\"][^\"]*[\"]{1,2}/gi;
+    var imgDescriptionMatch = /description=[\"]{1}[^\"]*[\"]{1,2}/gi;
     var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
 
     function simpleParse(formatData) {
@@ -271,6 +271,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 imgTitle = imageTag.match(imgTitleMatch);
                 if (imgTitle !== null) {
                     imageObject.title = imgTitle[0].split('=', 2)[1];
+                    imageObject.title = imageObject.title.slice(1, imageObject.title.length - 1);
                     imageTag = imageTag.replace(imgTitleMatch, '');
                 }
 
@@ -278,6 +279,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 imgDescription = imageTag.match(imgDescriptionMatch);
                 if (imgDescription !== null) {
                     imageObject.description = imgDescription[0].split('=', 2)[1];
+                    imageObject.description = imageObject.description.slice(1, imageObject.description.length - 1);
                     imageTag = imageTag.replace(imgDescriptionMatch, '');
                 }
 
@@ -322,7 +324,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
         } else {
             parserObject.tags = [];
         }
-        
+
         for (var tag = 0; tag < tagLength; tag++) {
 
             currentTag = parserObject.tags[tag];
@@ -331,8 +333,8 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
             currentIndex = formatData.indexOf(currentTag);
             nextIndex = formatData.indexOf(nextTag);
             closingIndex = formatData.indexOf('</>');
-            
-            
+
+
 
             if (closingIndex === 0) {
                 formatData = formatData.substr(closingIndex + 3);
@@ -344,7 +346,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
 
             //lg('tag: '+currentTag);
             //lg('current: '+currentIndex+' -- next: '+nextIndex+' -- close: '+closingIndex);
-            
+
             if (currentIndex === -1) {
                 break;
             }
@@ -354,7 +356,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 parserData = formatData.substring(currentIndex + currentTag.length, closingIndex);
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
-                
+
                 formatData = formatData.substr(closingIndex + 3);
                 parserObject.dataPoints.push(dataPoint);
                 continue;
@@ -653,7 +655,10 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
 
         ci.translate(offsetX, offsetY);
 
+        // The current line we are working with
         var activeLine = '';
+        // The cleaned up alternative text array
+        var altTextArray = [];
 
 
         // Helper functions to set the font styles to
@@ -726,7 +731,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 ci.font = fontStyle.join(' ');
             }
         }
-        
+
         function resetStyle(resetLevel, openTags) {
             // Get key value formatting or empty array
             keyValues = [];
@@ -784,9 +789,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 setDefaultStyle();
             }
         }
-        
-        
-        
+
         // Define if we make use of phantom mode to align text if required
         // in example for justified spaced text
         var usePhantom = false;
@@ -800,10 +803,10 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
 
         // Set the amount of pages used to zero
         pages = [];
-        
+
         // Set default style on refresh
         setDefaultStyle();
-        
+
         // Clear the canvas and fill it with background color
         clearAndFill();
 
@@ -827,26 +830,33 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                     if (tagStartIndex > 0) {
                         parserObject.dataPoints[0] = tagStartIndex - parserObject.tags[0].length;
                     }
-                    
+
                     parserObjectStore.push(parserObject);
                 } else {
                     var parserObject = parserObjectStore[line];
                 }
-                
 
                 // Start cleaning up the linedata by clearing tags
                 for (var tag = 0; tag < parserObject.tags.length; tag++) {
                     activeLine = activeLine.replace(parserObject.tags[tag], '');
                 }
 
-                // Clean up image definitions
+                // Clean up image definitions from present line and alt text
+                var altLine = activeLine;
                 for (var image = 0; image < parserObject.imageTagStore.length; image++) {
                     activeLine = activeLine.replace(parserObject.imageTagStore[image], '');
+                    altLine = altLine.replace(parserObject.imageTagStore[image], parserObject.imageStore[image].description)
                 }
 
-                // Clean up closings
+                // Clean up closings from processed line and alt text
                 activeLine = activeLine.replace(closingMatch, '');
+                altLine = altLine.replace(closingMatch, '');
+                if (altLine.trim() !== "") {
+                    altTextArray.push(altLine);
+                }
             } else {
+                // Define an empty parserobject if we have not markup in
+                // the present linedata
                 var parserObject = {};
                 parserObject.data = [];
                 parserObject.tags = [];
@@ -857,11 +867,17 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 parserObject.tagKeyValues = {};
                 parserObject.triggers = [];
                 parserObject.dataPoints = [];
+
                 if (parserObjectStore.length < lines) {
                     parserObjectStore.push(parserObject);
                 }
+
+                // Push the raw, unformated line onto the altText array
+                if (activeLine.trim() !== "") {
+                    altTextArray.push(activeLine);
+                }
             }
-                       
+
             var words = activeLine.replace('\r', '').split(' ');
             var wordCount = words.length;
 
@@ -955,10 +971,10 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                     }
                 }
 
-                // Keep the data sync
+                // Keep the character index sync for the trigger word index check
                 wordIndex += (word.length + 1);
 
-                // Layout and draw the sourceText
+                // Calculate the layout and draw the words on the canvas
                 wordSize = Math.ceil(ci.measureText(word).width);
                 spacerSize = Math.ceil(ci.measureText(' ').width);
                 var nextSize = currentSize + wordSize;
@@ -985,14 +1001,14 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 } else {
                     currentWord++;
                     if (!usePhantom) {
-                        if (stepY > (sizeY-40)) {
+                        if (stepY > (sizeY - 40)) {
                             pages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
                             clearAndFill();
                             stepX = 0;
                             stepY = 0;
                         }
                         ci.fillText(word, stepX, stepY + fontLineHeight);
-                        
+
                         if (hadPhantom) {
                             stepX += phantomData[phantomIndex][0];
                             phantomIndex++;
@@ -1127,12 +1143,46 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
                 }
             }
         }
-        
+
+        // If we have pages, set the first page active on the canvas
         if (pages.length > 0) {
             pages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
             ci.putImageData(pages[0], 0, 0);
         }
+
+        // Setting the title and alternative tag for screenreaders from
+        // cleaned markup data if not present
+        // Only the alternative text becomes replaced, if there is a title
+        // provided, with the text of the canvas.
+        // In other cases we promote the alt text to the title, this can
+        // include the first paragraph of the markup data if there is no title
+        // and neither an alt text specified
+        var exAlt = canvas.getAttribute("alt");
+        var exTitle = canvas.getAttribute("title");
+
+        if (exAlt !== null) {
+
+            if (altTextArray.length > 0) {
+                canvas.setAttribute("alt", altTextArray.join(' '));
+            }
+
+            if (exTitle === null) {
+                canvas.setAttribute("title", exAlt);
+            }
+        } else {
+
+            if (exTitle === null) {
+                canvas.setAttribute("title", altTextArray[0]);
+            }
+
+            if (altTextArray.length > 0) {
+                canvas.setAttribute("alt", altTextArray.slice(1).join(' '));
+            }
+        }
+
+
     }
+
 
     // Set the viewed page to zero and and key handlers for
     // pagination or resizing
@@ -1177,23 +1227,23 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
         offsetY = 10;
         sizeX = canvas.width - (offsetX * 2);
         sizeY = canvas.height - (offsetY * 2);
-        
+
         // If we have resized the canvas, rerun the content layouting
         if (sourceFile !== null) {
             loadText(sourceFile);
-        } else if (typeof(sourceText) !== undefined) {
+        } else if (typeof (sourceText) !== undefined) {
             processMarkup(sourceText);
         } else {
-            lg("Missing markup source file and source text for canvas '"+canvasItemId+"'");
+            lg("Missing markup source file and source text for canvas '" + canvasItemId + "'");
         }
     }
-    
-    canvas.addEventListener("click", function(evt) {
+
+    canvas.addEventListener("click", function (evt) {
         //lg("added keyboard handlers for "+canvas.getAttribute("id"));
         document.addEventListener("keyup", pagingHandler);
     });
 
-    document.addEventListener("click", function(evt) {
+    document.addEventListener("click", function (evt) {
         if (evt.target !== document.getElementById(canvasItemId)) {
             //lg("removed keyboard handlers for "+canvas.getAttribute("id"));
             document.removeEventListener("keyup", pagingHandler);
@@ -1201,12 +1251,12 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
     });
 
     // Get sourceFile data or directly call markup processor
-    if (sourceFile !== null) {
+    if (sourceFile !== null || sourceFile !== "") {
         loadText(sourceFile);
-    } else if (typeof(sourceText) !== undefined) {
+    } else if (typeof (sourceText) !== undefined) {
         processMarkup(sourceText);
     } else {
-        lg("Missing markup source file and source text for canvas '"+canvasItemId+"'");
+        lg("Missing markup source file and source text for canvas '" + canvasItemId + "'");
         return;
     }
 }
