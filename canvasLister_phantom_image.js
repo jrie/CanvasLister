@@ -346,7 +346,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
 
             //lg('tag: '+currentTag);
             //lg('current: '+currentIndex+' -- next: '+nextIndex+' -- close: '+closingIndex);
-            
+
             // Check the case if we have a tag followed by the same tag
             if (currentIndex === 0 && nextIndex === 0) {
                 parserData = formatData.substring(currentIndex + currentTag.length, closingIndex);
@@ -632,7 +632,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
          */
         return parserObject;
     }
-    
+
     // Markup processor
     var hasFormatCheck = /<[^/]*>.*<\/>/;
     var tagMatchPattern = /<[^<\s]{0,}.*[<\/>]+/g;
@@ -778,7 +778,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                 ci.font = fontStyle.join(' ');
             }
         }
-       
+
         // Here we define if we make use of phantom mode to get justified sourceText right
         var usePhantom = false;
         var phantomLines = [];
@@ -808,7 +808,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                 imgCounter++;
             }
         }
-        
+
         // Do the actual iterations and draw the sourceText
         while (line < lines) {
             activeLine = markupParts[line];
@@ -912,12 +912,11 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
             if (usePhantom && !hadPhantom) {
                 var phantomIndex = 0;
             }
-           
+
             while (currentWord < wordCount) {
                 // Check if we only have a single word, most likely this
                 // will be the result of one or more image tags
-                if (parserObject.imageStore.length !== 0 && wordCount === 1 && ((hadPhantom) || (!usePhantom))) {
-                    var availableWidth = canvas.width - 20;
+                if (parserObject.imageStore.length !== 0 && wordCount === 1 && (hadPhantom || !usePhantom)) {
                     /*
                      var imageObject = {};
                      imageObject.title = '';
@@ -934,94 +933,161 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                      imageObject.id = imageOrder;
                      */
                     var currentImage = {};
-                    for (var item = 0; item < imageStore.length; item++) {
-                        currentImage = imageStore[item];
-                        var margin = parseInt(currentImage.margin);
-                        stepY += margin;
+                    var imageRow = [];
+                    var rowHeight = 0;
 
-                        if (currentImage.align === "center") {
-                            if (item > 0) {
-                                if (imageStore[item - 1].align !== "center") {
-                                    var previousImage = imageStore[item - 1];
-                                    stepY += (parseInt(previousImage.margin) + parseInt(previousImage.height));
+                    var topX = sizeX;
+                    var bottomX = 0;
+                    var currentX = 0;
+                    var sizeInX = 0;
+
+                    function getTallestItem(imageRow) {
+                        if (imageRow.length !== 0) {
+                            var descriptionImageHeight = 0;
+                            var rowHeight = 0;
+                            for (var imageItem = 0; imageItem < imageRow.length; imageItem++) {
+                                if (imageRow[imageItem].description[0] === "bottom") {
+                                    if (descriptionImageHeight < imageRow[imageItem].description[2]) {
+                                        descriptionImageHeight = imageRow[imageItem].description[2] + imageRow[imageItem].height + imageRow[imageItem].margin + imageRow[imageItem].borderwidth;
+                                    }
+                                }
+
+                                if (rowHeight < imageRow[imageItem].height) {
+                                    rowHeight = imageRow[imageItem].height + imageRow[imageItem].margin + imageRow[imageItem].borderwidth;
                                 }
                             }
-                            stepX = (availableWidth - parseInt(currentImage.width)) / 2;
 
+                            if (rowHeight < descriptionImageHeight) {
+                                rowHeight = descriptionImageHeight;
+                            }
+
+                            return rowHeight;
+                        }
+
+                        return 0;
+                    }
+
+                    for (var item = 0; item < imageStore.length; item++) {
+                        currentImage = imageStore[item];
+
+                        var img = {};
+                        img.width = parseInt(currentImage.width);
+                        img.height = parseInt(currentImage.height);
+                        img.margin = parseFloat(currentImage.margin);
+                        img.borderwidth = parseFloat(currentImage.borderwidth) * 2;
+                        img.bordercolor = currentImage.bordercolor;
+                        img.align = currentImage.align;
+                        img.description = ["none", 0, 0];
+
+                        stepY += img.margin;
+
+                        if (img.align === "center") {
+                            stepY += getTallestItem(imageRow);
+                            stepX = (availableWidth - img.width) / 2;
+                            imageRow = [];
+
+                            topX = sizeX;
+                            bottomX = 0;
                         } else {
-                            if (item > 0) {
-                                if (imageStore[item - 1].align === "left") {
-                                    var previousImage = imageStore[item - 1];
-                                    stepX += (parseInt(previousImage.margin) + parseInt(previousImage.width));
-                                    if (stepX > availableWidth || (stepX + parseInt(currentImage.width)) > availableWidth) {
+                            imageRow.push(img);
+
+                            sizeInX = img.width + img.borderwidth;
+
+                            if (imageRow.length > 1) {
+                                if (img.align === "left") {
+                                    stepX = bottomX;
+                                    bottomX += (sizeInX + img.margin);
+
+                                    if (bottomX > (topX + img.margin)) {
                                         stepX = 0;
-                                        stepY += (parseInt(previousImage.margin) + parseInt(previousImage.height));
+                                        stepY += getTallestItem(imageRow);
+                                        imageRow = [img];
                                     }
-                                } else {
-                                    stepX = 0;
+                                } else if (img.align === "right") {
+                                    stepX = topX - sizeInX;
+                                    topX = (stepX - img.margin);
+
+                                    if (topX < (bottomX - img.margin)) {
+                                        stepX = sizeX - sizeInX;
+                                        stepY += getTallestItem(imageRow);
+                                        bottomX = 0;
+                                        imageRow = [img];
+                                        topX = (stepX - img.margin);
+                                    }
                                 }
+
                             } else {
-                                if (currentImage.align === "left") {
+                                if (img.align === "left") {
                                     stepX = 0;
+                                    bottomX = (sizeInX + img.margin);
+                                    topX = sizeX;
+                                } else if (img.align === "right") {
+                                    bottomX = 0;
+                                    stepX = topX - sizeInX;
+                                    topX = (stepX - img.margin);
                                 }
                             }
                         }
+
+                        if (currentImage.description !== '') {
+                            img.description = ["bottom", img.width, 25];
+                        }
+
 
                         // Add image to the stack for further drawing after script execution
                         var phantomImage = new Image();
                         phantomImage.src = currentImage.src;
                         if (phantomImageIds.indexOf([currentImage.id, line]) === -1) {
                             phantomImageIds.push([currentImage.id, line]);
-                            phantomImages.push([currentImage, phantomImage, stepX, stepY, parseInt(currentImage.width), parseInt(currentImage.height)]);
+                            phantomImages.push([currentImage, phantomImage, stepX, stepY, img.width, img.height]);
                         }
-                        
+
                         // Add the description text underneath the image
-                        stepY += parseInt(currentImage.height);
-                        var blockSize = [0, 0];
+                        stepY += img.height;
                         ci.lineWidth = 0;
                         if (currentImage.description !== '') {
-                            blockSize = [parseInt(currentImage.width), 25];
-                            
-                            // Test if we can fit all the text inside the description box
-                            
                             // Draw the outline for the image if present
-                            if (parseInt(currentImage.borderwidth) !== 0) {
-                                ci.lineWidth = parseInt(currentImage.borderwidth);
-                                ci.strokeStyle = currentImage.bordercolor;
+                            if (img.borderwidth !== 0) {
+                                ci.lineWidth = img.borderwidth;
+                                ci.strokeStyle = img.bordercolor;
                                 ci.beginPath();
-                                ci.rect(stepX, stepY-parseInt(currentImage.height), parseInt(currentImage.width), parseInt(currentImage.height)+blockSize[1]);
+                                ci.rect(stepX, stepY - img.height, img.width, img.height + img.description[2]);
                                 ci.stroke();
                                 ci.closePath();
                             }
-                            
                             // Draw the description box underneath the image
                             ci.fillStyle = currentImage.bg;
-                            ci.fillRect(stepX, stepY, parseInt(currentImage.width), blockSize[1]);
-                            
+                            ci.fillRect(stepX, stepY, img.width, img.description[2]);
+
+                            // Create the text clipping area
+                            ci.save();
+                            ci.beginPath();
+                            ci.rect(stepX, stepY, img.width - 10, img.description[2]);
+                            ci.closePath();
+                            ci.clip();
+
                             // Draw the text inside the description box
                             ci.fillStyle = currentImage.fg;
-                            ci.fillText(currentImage.description, stepX+10, stepY+16);
+                            ci.fillText(currentImage.description, stepX + 10, stepY + 16);
+
+                            ci.restore();
                         } else {
                             // Draw the outline for the image if present
                             if (parseInt(currentImage.borderwidth) !== 0) {
                                 ci.lineWidth = parseInt(currentImage.borderwidth);
                                 ci.strokeStyle = currentImage.bordercolor;
                                 ci.beginPath();
-                                ci.rect(stepX, stepY-parseInt(currentImage.height), parseInt(currentImage.width), parseInt(currentImage.height)+blockSize[1]);
+                                ci.rect(stepX, stepY - img.height, img.width, img.height + img.description[2]);
                                 ci.stroke();
                                 ci.closePath();
                             }
                         }
-                        
-                        stepY += ci.lineWidth;
-                        
-                        stepY -= parseInt(currentImage.height);
 
-                        stepY -= margin;
+                        stepY -= (img.height + img.margin);
                         if (item === imageStore.length - 1 || currentImage.align === "center") {
-                            stepY += ((margin * 2) + parseInt(currentImage.height));
+                            stepY += (img.margin + img.height);
                             if (currentImage.description !== '') {
-                                stepY += blockSize[1]+margin;
+                                stepY += img.description[2] + img.margin;
                             }
                         }
 
@@ -1030,7 +1096,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                     stepX = 0;
                     currentWord++;
                 }
-                
+
                 if (!hadPhantom) {
                     word = words[currentWord];
 
@@ -1177,7 +1243,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
             }
 
             line++;
-            
+
             // Switch off phantom drawing mode and start the actual drawing routine
             // after calculating the optimal spacing for the text items
             if (usePhantom && line >= lines) {
@@ -1230,7 +1296,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                             var subItem = phantomLines[lastItem - (processedItems - item)];
                             phantomData.push([subItem[0] + itemSpace, subItem[2]]);
                         }
-                        
+
                         // Add last item without any addional spacing
                         phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2]]);
 
@@ -1244,10 +1310,10 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                     }
                 }
             }
-            
+
             window.requestAnimationFrame(drawImages);
         }
-        
+
     }
 
 
