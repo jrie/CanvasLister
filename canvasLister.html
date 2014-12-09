@@ -8,9 +8,11 @@
         <canvas style="float: left; background-color:#000; margin: 12px;" id="canvasItem1" height="520" width="280"></canvas>
         <canvas style="float: left; background-color:#000033; margin: 12px;" id="canvasItem2" height="2100" width="550"></canvas>
         <canvas style="float: left; background-color:#000033; margin: 12px;" id="canvasItem3" height="980" width="250"></canvas>
+        <canvas style="float: left; background-color:#000033; margin: 12px;" id="canvasItem4" height="990" width="550"></canvas>
         <script type="text/javascript" src="canvasLister_simpleParse.js"></script>
         <script type="text/javascript" src="canvasLister_phantom_image.js"></script>
         <script type="text/javascript" src="canvasLister_phantom_pagination.js"></script>
+        <script type="text/javascript" src="canvasLister_phantom_v2.js"></script>
         <script type="text/javascript">
             //canvasLister_simpleParse(canvasItem, sourceFile, fontFamily, fontSize, fontWeight, backgroundColor, textColor, sourceText)
             canvasLister_simpleParse("canvasItem1", "source1.txt", "Arial", "12", "normal", "#001125", "#dedede");
@@ -22,8 +24,8 @@
             canvasLister_phantom_image("canvasItem2", "source3.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
             
             // Similar to the image version, without image support but pagination
-            //canvasLister_phantom_pagination("canvasItem3", "source4.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
             canvasLister_phantom_pagination("canvasItem3", "source4.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
+            canvasLister_phantom_v2("canvasItem4", "source5.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
         </script>
     </body>
 
