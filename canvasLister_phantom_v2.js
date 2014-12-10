@@ -1,7 +1,13 @@
 //'use strict';
 
 function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, textAlignment, backgroundColor, fontDefaultColor, sourceText) {
+
     var pages = [];
+
+    // If layouting is not in progress anymore, do the actual image loading
+    var inLayoutProcess = false;
+    var escapeLayoutProcess = false;
+
     var hasConsole = typeof (window.console) !== undefined ? true : false;
 
     window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
@@ -149,6 +155,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var offsetY = 10;
     var sizeX = canvas.width - (offsetX * 2);
     var sizeY = canvas.height - (offsetY * 2);
+
+    // Reset any positiong
+    ci.translate(0, 0);
+    ci.translate(offsetX, offsetY);
 
     // Check whether a sourcefile is given and if sourceText then is provided which is required
     if (sourceFile === null) {
@@ -674,8 +684,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         var hasFormat = false;
         var parserObjectStore = [];
 
-        ci.translate(offsetX, offsetY);
-
         // The current line we are working with
         var activeLine = '';
         // The cleaned up alternative text array
@@ -829,13 +837,19 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         var phantomImageIds = [];
         var imgCounter = 0;
         function drawImages() {
+
+            if (inLayoutProcess) {
+                return;
+            }
+
             if (imgCounter >= phantomImages.length) {
                 if (pages.length > 0) {
                     ci.putImageData(pages[0], 0, 0);
                 }
-
+                activePage = 0;
                 return;
             }
+
             var phantomImg = phantomImages[imgCounter];
             if (phantomImg[1].width === 0 || phantomImg[1].height === 0) {
                 window.requestAnimationFrame(drawImages);
@@ -866,6 +880,13 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
         // Do the actual iterations and draw the sourceText
         while (line < lines) {
+
+            if (escapeLayoutProcess) {
+                inLayoutProcess = false;
+                escapeLayoutProcess = false;
+                return;
+            }
+
             activeLine = markupParts[line];
 
             hasFormat = hasFormatCheck.test(activeLine);
@@ -1397,7 +1418,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                     }
                 }
             }
-
+            inLayoutProcess = false;
             window.requestAnimationFrame(drawImages);
         }
 
@@ -1441,6 +1462,35 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     }
 
 
+    function setup() {
+        if (!inLayoutProcess) {
+            inLayoutProcess = true;
+            escapeLayoutProcess = false;
+            activePage = 0;
+
+            // Get 2d context when present and measurements after geometry change
+            canvas = document.getElementById(canvasItemId);
+            ci = canvas.getContext('2d');
+            offsetX = 10;
+            offsetY = 10;
+            sizeX = canvas.width - (offsetX * 2);
+            sizeY = canvas.height - (offsetY * 2);
+            ci.translate(0, 0);
+            ci.translate(offsetX, offsetY);
+
+            // If we have resized the canvas, rerun the content layouting
+            if (sourceFile !== null) {
+                loadText(sourceFile);
+            } else if (typeof (sourceText) !== undefined) {
+                processMarkup(sourceText);
+            } else {
+                lg("Missing markup source file and source text for canvas '" + canvasItemId + "'");
+            }
+        } else if (escapeLayoutProcess) {
+            window.requestAnimationFrame(setup);
+        }
+    }
+
     // Set the viewed page to zero and and key handlers for
     // pagination or resizing
     var activePage = 0;
@@ -1465,11 +1515,13 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         }
 
         // Increasing or descreasing size by pressing the num pad plus minus
-        if (evt.keyCode === 107) {
+        if (evt.keyCode === 107 || evt.keyCode === 171) {
             document.getElementById(canvasItemId).width += 15;
-        } else if (evt.keyCode === 109) {
+            escapeLayoutProcess = true;
+        } else if (evt.keyCode === 109 || evt.keyCode === 173) {
             if (document.getElementById(canvasItemId).width > 200) {
                 document.getElementById(canvasItemId).width -= 15;
+                escapeLayoutProcess = true;
             } else {
                 return;
             }
@@ -1477,24 +1529,8 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             return;
         }
 
-        activePage = 0;
+        setup();
 
-        // Get 2d context when present and measurements after geometry change
-        canvas = document.getElementById(canvasItemId);
-        ci = canvas.getContext('2d');
-        offsetX = 10;
-        offsetY = 10;
-        sizeX = canvas.width - (offsetX * 2);
-        sizeY = canvas.height - (offsetY * 2);
-
-        // If we have resized the canvas, rerun the content layouting
-        if (sourceFile !== null) {
-            loadText(sourceFile);
-        } else if (typeof (sourceText) !== undefined) {
-            processMarkup(sourceText);
-        } else {
-            lg("Missing markup source file and source text for canvas '" + canvasItemId + "'");
-        }
     }
 
     canvas.addEventListener("click", function (evt) {
@@ -1508,6 +1544,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             document.removeEventListener("keyup", pagingHandler);
         }
     });
+
 
     // Get sourceFile data or directly call markup processor
     if (sourceFile !== null || sourceFile !== "") {
