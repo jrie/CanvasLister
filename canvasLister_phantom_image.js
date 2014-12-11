@@ -996,7 +996,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
 
                         if (img.align === "center") {
                             stepY += getTallestItem(imageRow);
-                            stepX = (availableWidth - img.width) / 2;
+                            stepX = (sizeX - img.width) / 2;
                             imageRow = [];
 
                             topX = sizeX;

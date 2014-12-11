@@ -1070,7 +1070,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         stepY += img.margin;
                         if (img.align === "center") {
                             stepY += getTallestItem(imageRow);
-                            stepX = (availableWidth - img.width) / 2;
+                            stepX = (sizeX - img.width) / 2;
                             imageRow = [];
 
                             topX = sizeX;
