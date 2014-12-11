@@ -1135,11 +1135,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             }
                         }
 
-                        if (currentImage.description !== '') {
-                            img.description = ["bottom", img.width, 25];
-                        }
-
-
                         // Add image to the stack for further drawing after script execution
                         var phantomImage = new Image();
                         phantomImage.src = currentImage.src;
@@ -1152,7 +1147,35 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         stepY += img.height;
                         ci.lineWidth = 0;
                         if (currentImage.description !== '') {
+                            var descriptionWords = currentImage.description.split(' ');
+                            var boxWidth = img.width - 10;
+                            var currentWidth = 0;
+                            var descriptionLineBrake = [];
+                            var descWordSize = 0.0;
+                            var descSpacerSize = ci.measureText(' ').width;
+                            var currentHeight = 25;
+                            
+                            if (ci.measureText(currentImage.description).width > img.width) {
+                                for (var wordItem = 0; wordItem < descriptionWords.length; wordItem++) {
+                                    descWordSize = ci.measureText(descriptionWords[wordItem]).width;
+                                    currentWidth += descWordSize;
+                                    if (currentWidth > boxWidth-10) {
+                                        descriptionLineBrake.push(wordItem);
+                                        currentWidth = (descWordSize + descSpacerSize);
+                                        if ((wordItem+1) < descriptionWords.length) {
+                                            currentHeight += fontDefaultLineHeight;
+                                        }
+                                    } else {
+                                        currentWidth += descSpacerSize;
+                                    }
+                                }
+                                
+                            }
+                            
+                            img.description = ["bottom", img.width, currentHeight];
+                            
                             // Draw the outline for the image if present
+                            // since the height of the box has been calculated
                             if (img.borderwidth !== 0) {
                                 ci.lineWidth = img.borderwidth;
                                 ci.strokeStyle = img.bordercolor;
@@ -1161,6 +1184,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                 ci.stroke();
                                 ci.closePath();
                             }
+                            
                             // Draw the description box underneath the image
                             ci.fillStyle = currentImage.bg;
                             ci.fillRect(stepX, stepY, img.width, img.description[2]);
@@ -1172,10 +1196,42 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             ci.closePath();
                             ci.clip();
 
+                            
                             // Draw the text inside the description box
                             ci.fillStyle = currentImage.fg;
-                            ci.fillText(currentImage.description, stepX + 10, stepY + 16);
+                            
+                            if (descriptionLineBrake.length === 0) {
+                                ci.fillText(currentImage.description, stepX + 10, stepY + 16);
+                            } else {
+                                var previousY = stepY;
+                                var previousX = stepX;
+                                var descWord = "";
+                                stepX += 10;
+                                stepY += 16;
+                                descSpacerSize = ci.measureText(" ").width;
+                                descWordSize = 0.0;
 
+                                for (var wordItem = 0; wordItem < descriptionWords.length; wordItem++) {
+                                    descWord = descriptionWords[wordItem];
+                                    descWordSize = ci.measureText(descWord).width;
+                                    if (descriptionLineBrake.length !== 0) {
+                                        if (wordItem === 0 && descriptionLineBrake[0] === 0) {
+                                            descriptionLineBrake.splice(0,1);
+                                        } else if (descriptionLineBrake[0] === wordItem ) {
+                                            stepY += fontDefaultLineHeight;
+                                            stepX = previousX+10;
+                                            descriptionLineBrake.splice(0,1);
+                                        }
+                                        
+                                    }
+                                    
+                                    ci.fillText(descWord, stepX, stepY);
+                                    stepX += (descWordSize+descSpacerSize);
+                                }
+
+                                stepY = previousY;
+                            }
+                            
                             ci.restore();
                         } else {
                             // Draw the outline for the image if present
