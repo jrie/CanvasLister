@@ -207,6 +207,10 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
         }
         dataLoader.onreadystatechange = function () {
             if (dataLoader.readyState === 4) {
+                // Clear the error message from canvas
+                ci.clearRect(0, 0, 300, 100);
+
+                // Continue with markup processing
                 markupData = dataLoader.responseText;
                 processMarkup(markupData);
             }
@@ -214,17 +218,18 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
 
         // Prepare error message if the source could not be loaded
         var stepY = 20;
+        ci.fillStyle = fontDefaultColor;
         ci.fillText("If you see this message,", 10, stepY);
         stepY += fontDefaultLineHeight;
         ci.fillText('the source file "' + sourceFile + '"', 10, stepY);
         stepY += fontDefaultLineHeight;
         ci.fillText("could not be loaded !", 10, stepY);
 
+        ci.translate(0, 0);
+        ci.translate(offsetX, offsetY);
+
         dataLoader.open('GET', sourceFile);
         dataLoader.send();
-
-        // Clear the error message from canvas
-        ci.clearRect(0, 0, 300, 100);
     }
 
     // Matching tags and imageTagStore for parser
@@ -660,8 +665,6 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
         var hasFormat = false;
         var parserObjectStore = [];
 
-        ci.translate(offsetX, offsetY);
-
         var activeLine = '';
 
         function setDefaultStyle() {
@@ -813,7 +816,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
             }
 
             var phantomImg = phantomImages[imgCounter];
-            if (phantomImg[1].width === 0 || phantomImg[1].height === 0) {
+            if (phantomImg[1].width === 0 || phantomImg[1].height === 0 || phantomImg[1].complete !== true) {
                 window.requestAnimationFrame(drawImages);
                 return;
             } else {

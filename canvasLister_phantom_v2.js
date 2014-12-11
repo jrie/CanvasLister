@@ -217,6 +217,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         }
         dataLoader.onreadystatechange = function () {
             if (dataLoader.readyState === 4) {
+                // Clear the error message from canvas
+                ci.clearRect(0, 0, 300, 100);
+
+                // Continue with markup processing
                 markupData = dataLoader.responseText;
                 processMarkup(markupData);
             }
@@ -224,6 +228,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
         // Prepare error message if the source could not be loaded
         var stepY = 20;
+        ci.fillStyle = fontDefaultColor;
         ci.fillText("If you see this message,", 10, stepY);
         stepY += fontDefaultLineHeight;
         ci.fillText('the source file "' + sourceFile + '"', 10, stepY);
@@ -232,9 +237,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
         dataLoader.open('GET', sourceFile);
         dataLoader.send();
-
-        // Clear the error message from canvas
-        ci.clearRect(0, 0, 300, 100);
     }
 
     // Clear and fill for pagination
@@ -851,7 +853,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             }
 
             var phantomImg = phantomImages[imgCounter];
-            if (phantomImg[1].width === 0 || phantomImg[1].height === 0) {
+            if (phantomImg[1].width === 0 || phantomImg[1].height === 0 || phantomImg[1].complete !== true) {
                 window.requestAnimationFrame(drawImages);
                 return;
             } else {

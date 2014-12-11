@@ -181,6 +181,10 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
         }
         dataLoader.onreadystatechange = function () {
             if (dataLoader.readyState === 4) {
+                // Clear the error message from canvas
+                ci.clearRect(0, 0, 300, 100);
+
+                // Continue with markup processing
                 markupData = dataLoader.responseText;
                 processMarkup(markupData);
             }
@@ -188,17 +192,20 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
 
         // Prepare error message if the source could not be loaded
         var stepY = 20;
+        ci.fillStyle = fontDefaultColor;
         ci.fillText("If you see this message,", 10, stepY);
         stepY += fontDefaultLineHeight;
         ci.fillText('the source file "' + sourceFile + '"', 10, stepY);
         stepY += fontDefaultLineHeight;
         ci.fillText("could not be loaded !", 10, stepY);
 
+        ci.translate(0, 0);
+        ci.translate(offsetX, offsetY);
+
         dataLoader.open('GET', sourceFile);
         dataLoader.send();
 
-        // Clear the error message from canvas
-        ci.clearRect(0, 0, 300, 100);
+
     }
 
     // Clear and fill for pagination
@@ -652,8 +659,6 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
         var spacerSize = 0;
         var hasFormat = false;
         var parserObjectStore = [];
-
-        ci.translate(offsetX, offsetY);
 
         // The current line we are working with
         var activeLine = '';
