@@ -46,8 +46,13 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     // Performs checks if a given keyValuePair is valid to some ruleset
     // returns false if something is wrong or missing
     function checkKeyValuePair(type, keyValuePair) {
+        // Skip keys without a value
+        if (keyValuePair[1] === undefined) {
+            return false;
+        }
+
         var key = keyValuePair[0].toLowerCase();
-        var value = keyValuePair[1];
+        var value = keyValuePair[1].toLowerCase();
 
         if (type === "text") {
             var attribute = textAttributes[key];
@@ -252,7 +257,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
     // Matching tags and imageTagStore for parser
     var formatTagMatch = /<[^\/][\w\d\s\=\"\#\'\*\%]*>/g;
-    var imgMatch = /<img[^<]*/g;
+    var imgMatch = /<[^\s]{0,}img\b[^\<]*/gi;
     var imgReplace = /\bimg\b/g;
     var imgTitleMatch = /title=[\"\'][^\"]*[\"\']{1,2}/gi;
     var imgDescriptionMatch = /description=[\"\'][^\"]*[\"\']{1,2}/gi;
@@ -329,7 +334,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 if (keyValues !== null) {
                     for (var keyValue = 0; keyValue < keyValues.length; keyValue += 2) {
                         if (checkKeyValuePair("image", [keyValues[keyValue], keyValues[keyValue + 1]])) {
-                            imageObject[keyValues[keyValue].toLowerCase()] = keyValues[keyValue + 1];
+                            imageObject[keyValues[keyValue].toLowerCase()] = keyValues[keyValue + 1].toLowerCase();
                         }
                     }
                 }
@@ -506,7 +511,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
             if (singleKey !== null) {
                 // Only the first matched singleKey is used for formatting
-                parserObject.tagStore[tag] = singleKey[0];
+                parserObject.tagStore[tag] = singleKey[0].toLowerCase();
             } else {
                 // Push an empty string to tell that we have no simple tag value
                 parserObject.tagStore[tag] = '';
@@ -532,7 +537,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                 for (var keyValue = 0; keyValue < keyValues.length; keyValue += 2) {
                     if (checkKeyValuePair("text", [keyValues[keyValue], keyValues[keyValue + 1]])) {
-                        permittedKeyValues.push([keyValues[keyValue], keyValues[keyValue + 1]]);
+                        permittedKeyValues.push([keyValues[keyValue].toLowerCase(), keyValues[keyValue + 1].toLowerCase()]);
                     }
                 }
 
@@ -890,11 +895,18 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             }
 
             activeLine = markupParts[line];
-
             hasFormat = hasFormatCheck.test(activeLine);
 
-            // Forcefull image detection
-            if (activeLine.match(imgMatch) !== null) {
+            // Detect image declarations
+            if (imgMatch.test(activeLine)) {
+                if (hasFormat) {
+                    // Clean imageTag from format data if we have other tags
+                    var imageTags = activeLine.match(imgMatch);
+                    for (var tag = 0; tag < imageTags.length; tag++) {
+                        activeLine = activeLine.replace(imageTags[tag], '');
+                    }
+                }
+
                 hasFormat = true;
             }
 
@@ -1154,26 +1166,26 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             var descWordSize = 0.0;
                             var descSpacerSize = ci.measureText(' ').width;
                             var currentHeight = 25;
-                            
+
                             if (ci.measureText(currentImage.description).width > img.width) {
                                 for (var wordItem = 0; wordItem < descriptionWords.length; wordItem++) {
                                     descWordSize = ci.measureText(descriptionWords[wordItem]).width;
                                     currentWidth += descWordSize;
-                                    if (currentWidth > boxWidth-10) {
+                                    if (currentWidth > boxWidth - 10) {
                                         descriptionLineBrake.push(wordItem);
                                         currentWidth = (descWordSize + descSpacerSize);
-                                        if ((wordItem+1) < descriptionWords.length) {
+                                        if ((wordItem + 1) < descriptionWords.length) {
                                             currentHeight += fontDefaultLineHeight;
                                         }
                                     } else {
                                         currentWidth += descSpacerSize;
                                     }
                                 }
-                                
+
                             }
-                            
+
                             img.description = ["bottom", img.width, currentHeight];
-                            
+
                             // Draw the outline for the image if present
                             // since the height of the box has been calculated
                             if (img.borderwidth !== 0) {
@@ -1184,7 +1196,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                 ci.stroke();
                                 ci.closePath();
                             }
-                            
+
                             // Draw the description box underneath the image
                             ci.fillStyle = currentImage.bg;
                             ci.fillRect(stepX, stepY, img.width, img.description[2]);
@@ -1196,10 +1208,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             ci.closePath();
                             ci.clip();
 
-                            
+
                             // Draw the text inside the description box
                             ci.fillStyle = currentImage.fg;
-                            
+
                             if (descriptionLineBrake.length === 0) {
                                 ci.fillText(currentImage.description, stepX + 10, stepY + 16);
                             } else {
@@ -1216,22 +1228,22 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                     descWordSize = ci.measureText(descWord).width;
                                     if (descriptionLineBrake.length !== 0) {
                                         if (wordItem === 0 && descriptionLineBrake[0] === 0) {
-                                            descriptionLineBrake.splice(0,1);
-                                        } else if (descriptionLineBrake[0] === wordItem ) {
+                                            descriptionLineBrake.splice(0, 1);
+                                        } else if (descriptionLineBrake[0] === wordItem) {
                                             stepY += fontDefaultLineHeight;
-                                            stepX = previousX+10;
-                                            descriptionLineBrake.splice(0,1);
+                                            stepX = previousX + 10;
+                                            descriptionLineBrake.splice(0, 1);
                                         }
-                                        
+
                                     }
-                                    
+
                                     ci.fillText(descWord, stepX, stepY);
-                                    stepX += (descWordSize+descSpacerSize);
+                                    stepX += (descWordSize + descSpacerSize);
                                 }
 
                                 stepY = previousY;
                             }
-                            
+
                             ci.restore();
                         } else {
                             // Draw the outline for the image if present

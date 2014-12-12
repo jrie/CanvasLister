@@ -26,8 +26,14 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
     // Performs checks if a given keyValuePair is valid to some ruleset
     // returns false if something is wrong or missing
     function checkKeyValuePair(keyValuePair) {
-        var key = keyValuePair[0];
-        var value = keyValuePair[1];
+
+        // Skip keys without a value
+        if (keyValuePair[1] === undefined) {
+            return false;
+        }
+
+        var key = keyValuePair[0].toLowerCase();
+        var value = keyValuePair[1].toLowerCase();
 
         var attribute = attributes[key];
         if (attribute === undefined) {
@@ -220,9 +226,9 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
 
 
     // Matching tags and imageTagStore for parser
-    var formatTagMatch = /<[^\/][\w\d\s\=\"\#\'\*\%]*>/g;
-    var imgMatch = /<img[^<]*/g;
-    var imgReplace = /\bimg\b/g;
+    var formatTagMatch = /<[^\/][\w\d\s\=\"\#\'\*\%]*>/gi;
+    var imgMatch = /<[^\s]{0,}img\b[^\<]*/gi;
+    var imgReplace = /\bimg\b/gi;
     var imgTitleMatch = /title=[\"][^\"]*[\"]{1,2}/gi;
     var imgDescriptionMatch = /description=[\"]{1}[^\"]*[\"]{1,2}/gi;
     var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
@@ -480,7 +486,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
 
             if (singleKey !== null) {
                 // Only the first matched singleKey is used for formatting
-                parserObject.tagStore[tag] = singleKey[0];
+                parserObject.tagStore[tag] = singleKey[0].toLowerCase();
             } else {
                 // Push an empty string to tell that we have no simple tag value
                 parserObject.tagStore[tag] = '';
@@ -506,7 +512,7 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
 
                 for (var keyValue = 0; keyValue < keyValues.length; keyValue += 2) {
                     if (checkKeyValuePair([keyValues[keyValue], keyValues[keyValue + 1]])) {
-                        permittedKeyValues.push([keyValues[keyValue], keyValues[keyValue + 1]]);
+                        permittedKeyValues.push([keyValues[keyValue].toLowerCase(), keyValues[keyValue + 1].toLowerCase()]);
                     }
                 }
 
@@ -820,14 +826,23 @@ function canvasLister_phantom_pagination(canvasItemId, sourceFile, fontDefaultFa
             activeLine = markupParts[line];
             hasFormat = hasFormatCheck.test(activeLine);
 
-            // Forcefull image detection
-            if (activeLine.match(imgMatch) !== null) {
+            // Detect image declarations
+            if (imgMatch.test(activeLine)) {
+                if (hasFormat) {
+                    // Clean imageTag from format data if we have other tags
+                    var imageTags = activeLine.match(imgMatch);
+                    for (var tag = 0; tag < imageTags.length; tag++) {
+                        activeLine = activeLine.replace(imageTags[tag], '');
+                    }
+                }
+
                 hasFormat = true;
             }
 
             if (hasFormat) {
                 if (parserObjectStore.length < lines) {
                     var parserObject = simpleParse(activeLine.match(tagMatchPattern)[0]);
+                    //lg(parserObject)
 
                     // Patch the first trigger data point so the formatter starts
                     // formatting from within the first tag
