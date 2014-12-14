@@ -1,3 +1,5 @@
+<size="150%" color="#bafa00"><bi>Hello <color="#000">test</></> from</> <b size="26px">canvas_Lister_Phantom_v2.js</>
+
 Click me to activate pagination and scaling. Press <bi>left</> or <bi>right</> arrow to see the pagination function working, use <b>plus</> or <b>minus</> on the numpad, to size me wider or thinner.
 
 <color="#eeee00">Strip steak west test <bi color="#5533ff">short</> loin cow shank pork bell shankley.</> Shoulder jowl pork chop salami doner tri-tip kielbasa fatback corned beef short ribs cow shankle bresaola. Beef salami ham prosciutto spare ribs corned beef, <color="#244896" size="20px">ball tip hamburger short loin.</> Boudin ball tip pig pork meatloaf flank tri-tip.
