@@ -1,17 +1,24 @@
-<size="150%" color="#bafa00"><bi>Hello <color="#000">test</></> from</> <b size="26px">canvas_Lister_Phantom_v2.js</>
+<size="150%" color="#bafa00"><bi>Hello <color="#ae0000">World</></> <b>from</></> <b size="24px">canvas_Lister_Phantom_v2.js</><i size="22px">!!!</> and some non-formatted text following.
 
 Click me to activate pagination and scaling. Press <bi>left</> or <bi>right</> arrow to see the pagination function working, use <b>plus</> or <b>minus</> on the numpad, to size me wider or thinner.
 
-<color="#eeee00">Strip steak west test <bi color="#5533ff">short</> loin cow shank pork bell shankley.</> Shoulder jowl pork chop salami doner tri-tip kielbasa fatback corned beef short ribs cow shankle bresaola. Beef salami ham prosciutto spare ribs corned beef, <color="#244896" size="20px">ball tip hamburger short loin.</> Boudin ball tip pig pork meatloaf flank tri-tip.
+<size="22px">Some general information text, please scroll down to see the images going.</>
 
+<color="#eeee00">Some tags can be nested, but its a good idea to keep the tags separated from <bi color="#5533ff">any</> character you would not like to format.</> The parser is quite cumbersome and can make up some error, but its still a good idea to separate those items clearly.
 
-Doner short ribs cow brisket spare ribs frankfurter tri-tip. Ham short ribs cow pancetta.
+<color="#244896" size="20px">Some more text data in size of 20px not % and blue.</> Normal non-styled text
 
-<color="#aa0000" size="14px">Leberkas <bi color="#0044ff">Bold italic and blue test case - t-bone</> porchetta pig</> <color="#dede00" size="350%">ball tip <bi>biltong cake and adding more text to see the flow</></>. Spare <color="#0088aa" size="350%">ribs tongue</> tenderloin biltong bresaola frankfurter. Filet mignon boudin pancetta, pork chop pastrami pig hamburger short ribs meatball spare ribs sirloin ribeye. Strip steak tail ham hock venison ball tip. Tongue salami ball tip meatball filet mignon, ham tri-tip flank. 
+This text wont be justified, since it fits in the whole line without adjustments!
 
-<color="#eeee00">Strip steak west test <bi color="#5533ff">short</> loin cow shank pork bell shankley.</> Shoulder jowl pork chop salami doner tri-tip kielbasa fatback corned beef short ribs cow shankle bresaola. Beef salami ham prosciutto spare ribs corned beef, <color="#244896" size="20px">ball tip hamburger short loin.</> Boudin ball tip pig pork meatloaf flank tri-tip.
+<color="#aa0000" size="14px">Leberkas <bi color="#0044ff">Bold italic and blue test case</> regular text.</>
+<color="#dede00" size="250%">Text in large size of 250% <bi>and more text in same size, but bold italic</> </>Regular text <color="#0088aa" size="175%">mixed with 175%</> and keep going regular.
 
-Test <i  >test2</> Welcome <b size="12px" color="#eeaa00" siz=>ideal</> more text
+<color="#eeee00">Now a <color="#ae0000">little bacon ipsum:</> </>Strip steak west <bi color="#5533ff">short loin</> cow shank pork bell shankley. Shoulder jowl pork chop salami doner tri-tip kielbasa fatback corned beef short ribs cow shankle bresaola. Beef salami ham prosciutto spare ribs corned beef, <color="#244896" size="20px">ball tip hamburger short loin.</> Boudin ball tip pig pork meatloaf flank tri-tip.
+
+Mixing in <i  >a very sluggish styled tag</> and here <b size="12px" color="#eeaa00" siz=>broken key values which are filtered out!</>
+
+<size="22px">Start of the images</>
+
 <img bg="#222222" fg="#fff" borderWidth="1px" borderColor="#fff" description="This is the description text and the image is centered" src="SuperSize-Moon.png" height="200px" width="350px">
 <img bg="#222222" fg="#fff" align="left" description="The next image has no description" src="starview_split.jpg" height="120px" width="190px"> <img bg="#222222" fg="#fff" align="left" src="starview1.jpg" height="120px" width="260px"> <img bg="#222222" fg="#fff" align="left" src="starview2.jpg" height="120px" width="260px" description="A left overflowing image"> <img bg="#222222" fg="#fff" borderWidth="1px" borderColor="#fff" description="Centered images brake the flow and long descriptions are overflowing too, extending the description box which text will be overflowing too" src="starview_split.jpg" height="200px" width="350px"> <img bg="#222222" fg="#fff" align="right" description="Aligned right" src="SuperSize-Moon.png" height="120px" width="150px"><img bg="#222222" fg="#fff" align="right" description="Aligned right too" title="title" src="SuperSize-Moon.png" height="120px" width="210px"> <img bg="#222222" fg="#fff" align="right" description="Aligned right too overflowing" title="title" src="starview1.jpg" height="120px" width="190px"> <img bg="#222222" fg="#fff" align="left" description="Aligned left 2" title="title" src="starview2.jpg" height="120px" width="335px">
 <color="#aa0000" size="15px">Leberkas <b size="31px"><i><bi>t-bone</></></> porchetta <b>pig</></> beef ribs <bi>rump <i>pancetta</></> nothing <bi size="24px">biltong ribeye CHUCK jerky shoulder beef</>. Und mehr text

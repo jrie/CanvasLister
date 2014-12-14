@@ -189,7 +189,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         fontDefaultSize = '11px';
     }
 
-    var fontDefaultLineHeight = parseFloat(fontDefaultSize) + 4;
+    var fontDefaultLineHeight = parseFloat(fontDefaultSize) + (parseFloat(fontDefaultSize) / 2.5);
 
     if (fontDefaultWeight === null) {
         fontDefaultWeight = 'normal';
@@ -212,7 +212,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     ci.textAlign = 'left';
 
     var markupData = '';
-    var globalClosingTag = "</>";
 
     // Textloader using ajax
     function loadText(sourceFile) {
@@ -264,22 +263,23 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var imgDescriptionMatch = /description=[\"\'][^\"]*[\"\']{1,2}/gi;
     var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
 
-    var triggerMatch = /[^_][\w\d\-\'\"\#]*[\,\!\"\'\;\:\;\.]{0,}/g;
-    var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\&\`\!]/g;
+    var triggerMatch = /[^_][\w\d]*[\,\!\"\'\;\:\;\.\%\$\?]{0,}/g;
+    var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\&\`\!\%\\$?]/g;
 
     function simpleParse(formatData) {
         //lg('---parser data------------------');
 
-        var parserObject = {};
-        parserObject.data = [];
-        parserObject.tags = [];
-        parserObject.imageStore = [];
-        parserObject.imageTagStore = [];
-        parserObject.orders = [];
-        parserObject.tagStore = {};
-        parserObject.tagKeyValues = {};
-        parserObject.triggers = [];
-        parserObject.dataPoints = [];
+        var parserObject = {};                  // The parserObject contains the formatter data
+        parserObject.data = [];                 // Contains the data of the tag
+        parserObject.tags = [];                 // The tags as defined
+        parserObject.imageStore = [];           // Image elements
+        parserObject.imageTagStore = [];        // Image keyvalue store
+        parserObject.orders = [];               // The tag order levels for formatting
+        parserObject.tagStore = {};             // The simple tags listed like b, bi, i
+        parserObject.tagKeyValues = {};       // The key values store of tags
+        parserObject.triggers = [];             // Word boundaries which trigger formatting
+        parserObject.dataPoints = [];           // The approximate indexes of the triggers
+        parserObject.orderNestedTags = [];      // Information of tags nested into each other
 
         // Preprocess and remove image tag from formatting data, prepare image data
         // for display on the canvas, using parameters
@@ -401,7 +401,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
             // Check the case if we have a tag followed by the same tag
             if (currentIndex === 0 && nextIndex === 0) {
-                parserData = formatData.substring(currentIndex + currentTag.length, closingIndex);
+                parserData = formatData.substring(currentIndex + currentTag.length, closingIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
                 formatData = formatData.substr(closingIndex + 3);
@@ -571,13 +571,24 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         var triggerTwo = '';
 
         for (var data = 0; data < parserObject.data.length; data++) {
-            parserData = parserObject.data[data].trim();
+            parserData = parserObject.data[data];
+            
+            // Use whole word as trigger if we have no spaces inside
+            if (parserData.indexOf(" ") === -1 && parserData.length !== 0) {
+                triggerOne = parserData.match(triggerMatch)[0].replace(triggerClear, '').trim();
+                if (triggerOne === "") {
+                    triggerOne = parserData;
+                }
+                parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
+                continue;
+            }
+            
             triggers = parserData.match(triggerMatch);
 
             if (triggers !== null) {
                 triggerOne = triggers[0].replace(triggerClear, '').trim();
 
-                if (triggerOne.length === 1) {
+                if (triggerOne.length === 0) {
                     parserData = parserData.replace(triggerOne, '');
                     triggerTwo = parserData.trim();
                     parserObject.triggers.push([[0, triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
@@ -616,6 +627,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
             // If we have no open tag, dont push anything
             if (orderLevel === -1) {
+                parserObject.orderNestedTags.push(-1);
                 continue;
             }
 
@@ -659,27 +671,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         // in the sourceText to avoid triggering on triggerwords before the acutal tag
         // has started
 
-
-
-        // Summary
-        /*
-         lg(parserObject.tags);
-         lg(parserObject.data);
-         lg(parserObject.orders);
-         lg(parserObject.tagStore);
-         lg(parserObject.tagKeyValues);
-
-         if (parserObject.imageTagStore.length !== 0) {
-         lg(parserObject.imageStore);
-         lg(parserObject.imageTagStore);
-         }
-
-         lg(parserObject.triggers);
-         lg('---object-----------------------');
-         lg(parserObject);
-         lg(' ');
-         lg('  ');
-         */
         return parserObject;
     }
 
@@ -937,7 +928,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                 // Start cleaning up the linedata by clearing tags
                 for (var tag = 0; tag < parserObject.tags.length; tag++) {
-                    activeLine = activeLine.replace(parserObject.tags[tag], '');
+                    activeLine = activeLine.replace(parserObject.tags[tag], ' ').trim();
                 }
 
                 // Clean up image definitions from present line and alt text
@@ -948,7 +939,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
 
                 // Clean up closings from processed line and alt text
-                activeLine = activeLine.replace(closingMatch, '');
+                activeLine = activeLine.replace(closingMatch,  ' ');
                 altLine = altLine.replace(closingMatch, '');
                 if (altLine.trim() !== "") {
                     altTextArray.push(altLine);
@@ -977,7 +968,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
             }
 
-            var words = activeLine.replace('\r', '').split(' ');
+            var words = activeLine.trim().replace(/'\r'/g, '').split(' ');
             var wordCount = words.length;
 
             var currentWord = 0;
@@ -997,6 +988,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             var orders = parserObject.orders;
             var dataPoints = parserObject.dataPoints;
             var imageStore = parserObject.imageStore;
+            var orderNestedTags = parserObject.orderNestedTags;
 
             // Sizes for looping and such
             var orderSize = parserObject.orders.length;
@@ -1261,8 +1253,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
 
                 if (!hadPhantom) {
-                    word = words[currentWord];
-
+                    word = words[currentWord].trim();
                 } else {
                     if (phantomData[phantomIndex] === '|' || phantomData[phantomIndex] === '-') {
                         // Reset stepX to zero, as we have a forced line brake
@@ -1286,14 +1277,33 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
 
                 if (useFormat) {
-                    var triggerWord = word.match(triggerMatch)[0].replace(triggerClear, '');
+                    var triggerWord = "";
+                    if (word !== "") {
+                        triggerWord = word.match(triggerMatch)
+                        if (triggerWord !== null) {
+                            triggerWord = triggerWord[0].replace(triggerClear, '');
+                            
+                            if (triggerWord === "") {
+                                triggerWord = word;
+                            }
+                        }
+                    }
+
+                    
                     if (orderLevel >= orderSize) {
                         setDefaultStyle();
                         useFormat = false;
                     } else {
                         //lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1]);
                         if ((triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1]) && (wordIndex + 3) >= dataPoints[orderLevel]) {
+                            if (orderLevel === (orderSize-1) && openTags.length === 2) {
+                                openTags = [];
+                                setDefaultStyle();
+                                
+                            }
+                            
                             setStyle(orders[orderLevel]);
+                            
                             if (openTags.indexOf(orders[orderLevel]) === -1) {
                                 openTags.push(orders[orderLevel]);
                             }
@@ -1398,8 +1408,12 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                     setDefaultStyle();
                                     orderLevel++;
                                 }
-
+                            } else {
+                                if (orderLevel === orderSize) {
+                                    useFormat = false;
+                                }
                             }
+                            
                             orderLevel++;
                         }
                     } else {
@@ -1427,6 +1441,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                 for (var textItem = 0; textItem < phantomLength; textItem++) {
                     currentItem = phantomLines[textItem];
+                    if (currentItem.length === 0) {
+                        continue;
+                    }
+
                     if (currentItem === '|') {
 
                         // Add the data for non complete lines which not
