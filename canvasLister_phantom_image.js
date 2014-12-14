@@ -1086,9 +1086,7 @@ function canvasLister_phantom_image(canvasItemId, sourceFile, fontDefaultFamily,
                                     if (currentWidth > boxWidth - 10) {
                                         descriptionLineBrake.push(wordItem);
                                         currentWidth = (descWordSize + descSpacerSize);
-                                        if ((wordItem + 1) < descriptionWords.length) {
-                                            currentHeight += fontDefaultLineHeight;
-                                        }
+                                        currentHeight += fontDefaultLineHeight;
                                     } else {
                                         currentWidth += descSpacerSize;
                                     }
