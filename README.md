@@ -1,13 +1,13 @@
 canvas lister
 =======
 
-"Canvas lister" is work-in-progress with the idea to load markup data and convert/display this information on a HTML5 canvas element with styling as well as basic text alignment inside the canvas drawing area.
+"Canvas lister" is work-in-progress with the idea to load custom markup data in form of img declerations and text, convert & display this information on a HTML5 canvas element with a styling syntax similar to CSS.
 
-Note: The project was tested in Firefox, IE10 and Chrome to be working, with the exception that Chrome requires to be started with the parameter: "--allow-file-access-from-files", otherwise the Ajax request to load the source markup files will brake. Parsing of simple chained tags has been fixed in all versions.
+Note: The project was mainly tested in Firefox, but does run in IE10 and Chrome, the only exception with Chrome (if not installed online) is the exception that Chrome requires to be started with the parameter: "--allow-file-access-from-files", otherwise a (perhaps local) Ajax request to load the source markup files will fail.
 
-There are several versions, explanation starting from initial to current development version
+There are several versions, explanation starting from initial to current development version. The canvasLister.html file includes examples of the usage of canvasLister and the source files have example markup which in addition also loads the images present. A short guide on the feature list and syntax to create the markup, can be found in form of the "formattingGuide.json".
 
-The "canvasLister_simpleParse.js" version [first testing version]
+The "canvasLister_simpleParse.js" version [first testing version, does not read nested markup tags]
 
 Which was written to only support single tag format elements, including a very simple parser, but already displays the information on a canvas in a styled fashion. Nested tags are not supported by this version, but supports basic customization like:
 - General default font family, size and color
@@ -26,17 +26,17 @@ This version has a better tag parser and allows nesting of tags and formatting. 
 
 The "canvasLister_phantom.js" version
 
-Its named phantom version because of a repeated iteration over the actual content to allow looking at complete lines to allow "justification" of text data. This is the recommended version if you want to have the justification feature, which looks pretty nice while working very nicely with the formatting of "source2.txt".
+Its named phantom version because of a repeated iteration over the actual content to allow looking at complete lines to allow "justification" of text data. Working nice with the formatting of "source2.txt".
 
 
 The "canvasLister_phantom_image.js" and "canvasLister_phantom_pagination.js" versions [hands on version(s)]
 
-These versions introduce better parsing, which had been broken but is now fixed in all versions beginning from the improved parse version. This versions also started to implement basic image support or pagination on demand. The pagination version in addition does allow the viewer to interactively resize the canvas in width and text paging.
+These versions introduce better parsing, and usage of images or pagination respectively. If you need image support and pagination, you should use canvasLister_phantom_v2.js which is also recommended
 
 
-The "canvasLister_phantom_v2.js" version [development version]
+The "canvasLister_phantom_v2.js" version [development version - recommended to use]
 
-This version does combine the basic image support and pagination. The solution is little sluggish due to waiting times for the test image to be loaded properly. Therefore, if you want to test both features aside, use the image.js or pagination.js version respectively. If you require image display, use the image version, but dont expect to be able to have the fast text display and kinda neat paging keyboard handling like in the pagination version.
+This version combines the basic image support and pagination and in addition does allow dynamic canvas resizing in width by pressing plus/minus on the keyboard or numpad as well as generating alternative texts and title attribute from the markup onto the canvas, if no title is provided, which should be an attempt to work better with screenreaders.
 
 
 If you have any questions or feedback, please let me know!
