@@ -31,12 +31,12 @@ Its named phantom version because of a repeated iteration over the actual conten
 
 The "canvasLister_phantom_image.js" and "canvasLister_phantom_pagination.js" versions [hands on version(s)]
 
-These versions introduce better parsing, and usage of images or pagination respectively. If you need image support and pagination, you should use canvasLister_phantom_v2.js which is also recommended
+These versions introduce better parsing, and usage of images or pagination respectively. But its recommended to use canvasLister_phantom_v2.js.
 
 
-The "canvasLister_phantom_v2.js" version [development version - recommended to use]
+The "canvasLister_phantom_v2.js" version [development version - recommended to use as latest fixes are in here]
 
 This version combines the basic image support and pagination and in addition does allow dynamic canvas resizing in width by pressing plus/minus on the keyboard or numpad as well as generating alternative texts and title attribute from the markup onto the canvas, if no title is provided, which should be an attempt to work better with screenreaders.
 
 
-If you have any questions or feedback, please let me know!
+If you find any parsing problems, please let me know so the parsing engine can be improved since it is very tricky to test all corner cases, thx!
