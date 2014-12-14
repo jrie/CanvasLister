@@ -212,6 +212,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     ci.textAlign = 'left';
 
     var markupData = '';
+    var globalClosingTag = "</>";
 
     // Textloader using ajax
     function loadText(sourceFile) {
@@ -262,6 +263,9 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var imgTitleMatch = /title=[\"\'][^\"]*[\"\']{1,2}/gi;
     var imgDescriptionMatch = /description=[\"\'][^\"]*[\"\']{1,2}/gi;
     var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
+
+    var triggerMatch = /[^_][\w\d\-\'\"\#]*[\,\!\"\'\;\:\;\.]{0,}/g;
+    var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\&\`\!]/g;
 
     function simpleParse(formatData) {
         //lg('---parser data------------------');
@@ -389,6 +393,11 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
             //lg('tag: '+currentTag);
             //lg('current: '+currentIndex+' -- next: '+nextIndex+' -- close: '+closingIndex);
+
+            // Escape from formatting because there was a parsing error
+            if (currentIndex === -1 && nextIndex === -1 && closingIndex === -1) {
+                break;
+            }
 
             // Check the case if we have a tag followed by the same tag
             if (currentIndex === 0 && nextIndex === 0) {
@@ -556,8 +565,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         // has been cleared from tag separators and line endings, line separators
         // become merged during the clearing.
         // var parserObject.triggers = [];
-        var triggerMatch = /[^_][\w\d\-\'\"\#]*[\,\!\"\'\;\:\;\.]{0,}/g;
-        var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\&\`\!]/g;
         var triggers = [];
         var parserData = '';
         var triggerOne = '';
@@ -577,9 +584,9 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 } else {
                     triggerTwo = triggers[triggers.length - 1].replace(triggerClear, '').trim();
                     if (triggerTwo.length === 0) {
-                        parserObject.triggers.push([[0, triggerOne], [0, triggerOne], 0]);
+                        parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
                     } else {
-                        parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo), triggerTwo], 0]);
+                        parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
                     }
                 }
             } else {
@@ -1011,7 +1018,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             var wordSize = 0;
             var wordIndex = 0;
 
-            var triggerWordMatch = /[^\.\;\:\_\#\+\*\,\!]*/g;
             if (usePhantom && !hadPhantom) {
                 var phantomIndex = 0;
             }
@@ -1020,21 +1026,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 // Check if we only have a single word, most likely this
                 // will be the result of one or more image tags
                 if (parserObject.imageStore.length !== 0 && wordCount === 1 && (hadPhantom || !usePhantom)) {
-                    /*
-                     var imageObject = {};
-                     imageObject.title = '';
-                     imageObject.description = '';
-                     imageObject.fg = '#000000';
-                     imageObject.bg = '#ffffff';
-                     imageObject.src = 'none';
-                     imageObject.height = 'auto';
-                     imageObject.width = 'auto';
-                     imageObject.margin = '5px';
-                     imageObject.align = "center";
-                     imageObject.borderwidth = "0px";
-                     imageObject.bordercolor = "#000000";
-                     imageObject.id = imageOrder;
-                     */
                     var currentImage = {};
                     var imageRow = [];
                     var topX = sizeX;
@@ -1295,8 +1286,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
 
                 if (useFormat) {
-                    var triggerWord = word.match(triggerWordMatch)[0];
-
+                    var triggerWord = word.match(triggerMatch)[0].replace(triggerClear, '');
                     if (orderLevel >= orderSize) {
                         setDefaultStyle();
                         useFormat = false;
@@ -1391,7 +1381,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                         //lg("OUT ---- word: "+ triggerWord + " --------- IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
                         if (triggerWord === triggers[orderLevel][1][1]) {
-
                             if (orders[orderLevel] > orders[orderLevel + 1]) {
                                 if (openTags.length === 1) {
                                     resetStyle(openTags[0], 0);
