@@ -401,7 +401,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
             // Check the case if we have a tag followed by the same tag
             if (currentIndex === 0 && nextIndex === 0) {
-                parserData = formatData.substring(currentIndex + currentTag.length, closingIndex).trim();
+                parserData = formatData.substring(currentIndex + currentTag.length, closingIndex);
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
                 formatData = formatData.substr(closingIndex + 3);
