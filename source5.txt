@@ -10,7 +10,7 @@ Click me to activate pagination and scaling. Press <bi>left</> or <bi>right</> a
 
 This text wont be justified, since it fits in the whole line without adjustments!
 
-<color="#aa0000" size="14px">Leberkas <bi color="#0044ff">Bold italic and blue test case</> regular text.</>
+<color="#aa0000" size="14px">Leberkas <bi color="#0044ff">Bold italic and blue test case</> regular text in red.</>
 <color="#dede00" size="250%">Text in large size of 250% <bi>and more text in same size, but bold italic</> </>Regular text <color="#0088aa" size="175%">mixed with 175%</> and keep going regular.
 
 <color="#eeee00">Now a <color="#ae0000">little bacon ipsum:</>Strip steak </>west <bi color="#5533ff">short loin</> cow shank pork bell shankley. Shoulder jowl pork chop salami doner tri-tip kielbasa fatback corned beef short ribs cow shankle bresaola. Beef salami ham prosciutto spare ribs corned beef, <color="#244896" size="20px">ball tip hamburger short loin.</> Boudin ball tip pig pork meatloaf flank tri-tip.

@@ -245,8 +245,9 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     }
 
     // Clear and fill for pagination
+    var previousFill = "";
     function clearAndFill() {
-        var previousFill = ci.fillStyle;
+        previousFill = ci.fillStyle;
         var canvasItem = document.getElementById(canvasItemId);
         ci.clearRect(-10, -10, canvasItem.width + 20, canvasItem.height + 20);
         ci.fillStyle = backgroundColor;
@@ -801,7 +802,8 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             } else {
                                 fontSize = keyValues[keyItem][1];
                             }
-                            lineHeightHint = parseFloat(fontSize);
+
+                            lineHeightHint = parseFloat(fontSize) + (parseFloat(fontSize) * 0.22);
 
                             if (fontLineHeight < lineHeightHint) {
                                 fontLineHeight = lineHeightHint;
@@ -1065,7 +1067,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             var fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontFamily];
             var wordSize = 0;
             var wordIndex = 0;
-            
+
             var triggerWord = "";
             var matchedTrigger = [];
 
@@ -1332,7 +1334,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         }
 
                     }
-                    word = phantomData[phantomIndex][1];
+                    word = phantomData[phantomIndex][2];
                 }
 
                 if (useFormat) {
@@ -1416,16 +1418,17 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             stepX = 0;
                             stepY = 0;
                         }
-                        ci.fillText(word, stepX, stepY + fontLineHeight);
 
                         if (hadPhantom) {
+                            ci.fillText(word, stepX, stepY + phantomData[phantomIndex][1]);
                             stepX += phantomData[phantomIndex][0];
                             phantomIndex++;
                         } else {
+                            ci.fillText(word, stepX, stepY + fontLineHeight);
                             stepX += (wordSize + spacerSize);
                         }
                     } else {
-                        phantomLines.push([wordSize, spacerSize, word]);
+                        phantomLines.push([wordSize, spacerSize, parseFloat(fontSize), word]);
                         stepX += (wordSize + spacerSize);
                     }
 
@@ -1516,12 +1519,23 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         var lastItem = textItem - 1;
                         processedItems--;
 
+                        // Figure out the optimal placement on Y for text
+                        var optimalY = 0;
+                        var subItem = [];
                         for (var item = 0; item < processedItems; item++) {
-                            var subItem = phantomLines[lastItem - (processedItems - item)];
-                            phantomData.push([subItem[0] + subItem[1], subItem[2].trim()]);
+                            subItem = phantomLines[lastItem - (processedItems - item)];
+                            if (optimalY < subItem[2]) {
+                                optimalY = subItem[2];
+                            }
                         }
 
-                        phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2].trim()]);
+                        //  Write actual text data with X and Y spacement
+                        for (var item = 0; item < processedItems; item++) {
+                            subItem = phantomLines[lastItem - (processedItems - item)];
+                            phantomData.push([subItem[0] + subItem[1], optimalY, subItem[3].trim()]);
+                        }
+
+                        phantomData.push([phantomLines[lastItem][0], optimalY, phantomLines[lastItem][3].trim()]);
 
                         availableWidth = canvas.width;
                         processedItems = 0;
@@ -1539,15 +1553,26 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                         // Calculate the spacing we can give to each item
                         processedItems--;
+
+                        // Figure out the optimal placement on Y for text
+                        var optimalY = 0;
+                        var subItem = [];
+                        for (var item = 0; item < processedItems; item++) {
+                            subItem = phantomLines[lastItem - (processedItems - item)];
+                            if (optimalY < subItem[2]) {
+                                optimalY = subItem[2];
+                            }
+                        }
+
                         var itemSpace = parseFloat((availableWidth / (processedItems)).toPrecision(3));
 
                         for (var item = 0; item < processedItems; item++) {
-                            var subItem = phantomLines[lastItem - (processedItems - item)];
-                            phantomData.push([subItem[0] + itemSpace, subItem[2].trim()]);
+                            subItem = phantomLines[lastItem - (processedItems - item)];
+                            phantomData.push([subItem[0] + itemSpace, optimalY, subItem[3].trim()]);
                         }
 
                         // Add last item without any addional spacing
-                        phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2].trim()]);
+                        phantomData.push([phantomLines[lastItem][0], optimalY, phantomLines[lastItem][3].trim()]);
 
                         // Push a line break, so the formatter knows where to
                         // make a cut in the justified sourceText
