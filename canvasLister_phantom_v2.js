@@ -263,8 +263,8 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var imgDescriptionMatch = /description=[\"\'][^\"]*[\"\']{1,2}/gi;
     var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
 
-    var triggerMatch = /[^_][\w\d]*[\,\!\"\'\;\:\;\.\%\$\?]{0,}/g;
-    var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\&\`\!\%\\$\?]/g;
+    var triggerMatch = /[^_][\w\d]*[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\-\&\`\!\%\\$\?]{0,}/g;
+    var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\-\&\`\!\%\\$\?]/g;
     var spaceCorrection = /[\s]{2,}/g;
 
     function simpleParse(formatData) {
@@ -377,7 +377,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
 
         for (var tag = 0; tag < tagLength; tag++) {
-
             currentTag = parserObject.tags[tag];
             nextTag = parserObject.tags[tag + 1];
 
@@ -390,20 +389,20 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 currentIndex = formatData.indexOf(currentTag);
                 nextIndex = formatData.indexOf(nextTag);
                 closingIndex = formatData.indexOf('</>');
-                openTags.splice(openTags.length - 1, 1);
+
             }
 
             //lg('tag: '+currentTag);
             //lg('current: '+currentIndex+' -- next: '+nextIndex+' -- close: '+closingIndex);
 
             // Escape from formatting because there was a parsing error
-            if (currentIndex === -1 && nextIndex === -1 && closingIndex === -1) {
+            if (currentIndex === -1 && nextIndex === -1) {
                 break;
             }
 
             // Check the case if we have a tag followed by the same tag
             if (currentIndex === 0 && nextIndex === 0) {
-                parserData = formatData.substring(currentIndex + currentTag.length, closingIndex);
+                parserData = formatData.substring(currentIndex + currentTag.length, closingIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
                 formatData = formatData.substr(closingIndex + 3);
@@ -411,11 +410,58 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 continue;
             }
 
+            // Handle the case that a tag is open and data left to format
+            if (currentIndex > closingIndex) {
+                parserData = formatData.substring(0, closingIndex).trim();
+                parserObject.data.push(parserData);
+                parserObject.orders.push(0);
+                formatData = formatData.substr(closingIndex + 3);
+                parserObject.dataPoints.push(dataPoint);
+                processedTags++;
+
+                if (openTags.length !== 0) {
+                    openTags = [];
+                }
+
+                tag--;
+                continue;
+            }
+
+            // Handle a tag starting inside this tag or no tag following directly
+            if (nextIndex !== -1 && nextIndex < closingIndex && currentIndex !== nextIndex) {
+                // lg("closing tag or tag in tag
+                parserData = formatData.substring(currentTag.length, nextIndex).trim();
+                parserObject.data.push(parserData);
+                parserObject.orders.push(tag);
+                formatData = formatData.substr(nextIndex);
+                parserObject.dataPoints.push(dataPoint);
+                openTags.push(tag);
+                processedTags++;
+                continue;
+            }
+
+            // Handle the case that we have data from an opnened tag, within antoehr that inside
+            // This part fetches the data for the embedded as well as the ending of that data
+            if (nextIndex === -1 && closingIndex !== -1 && tag === tagLength - 1 && openTags.length !== 0) {
+                parserData = formatData.substring(currentTag.length, closingIndex).trim();
+                parserObject.data.push(parserData);
+                parserObject.orders.push(1);
+                parserObject.dataPoints.push(dataPoint);
+                formatData = formatData.substr(closingIndex + 3);
+
+                parserData = formatData.substring(0, formatData.length - 3).trim();
+                parserObject.data.push(parserData);
+                parserObject.orders.push(0);
+                parserObject.dataPoints.push(dataPoint);
+                openTags = [];
+                continue;
+            }
+
             // If the tag start not a zero, we have non-tagged data
             if (currentIndex !== 0) {
                 //lg("in non tagged data");
                 if (openTags.length === 0) {
-                    parserData = formatData.substring(0, currentIndex);
+                    parserData = formatData.substring(0, currentIndex).trim();
                     parserObject.data.push(parserData);
                     parserObject.orders.push(-1);
                     formatData = formatData.substr(currentIndex);
@@ -426,26 +472,34 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         dataPoint += parserData.length;
                     }
                 } else {
-                    parserData = formatData.substring(0, closingIndex);
+                    parserData = formatData.substring(0, currentIndex).trim();
                     parserObject.data.push(parserData);
                     parserObject.orders.push(openTags[0]);
-                    formatData = formatData.substr(closingIndex + 3);
-
+                    formatData = formatData.substr(currentIndex);
+                    /*
+                     parserData = formatData.substring(0, closingIndex).trim();
+                     parserObject.data.push(parserData);
+                     parserObject.orders.push(openTags[0]);
+                     formatData = formatData.substr(closingIndex + 3);
+                     */
                     parserObject.dataPoints.push(dataPoint);
-
                     if (parserData.trim() !== "") {
                         dataPoint += parserData.length;
                     }
+
+                    if (closingIndex > currentIndex && openTags.length === 1) {
+                        openTags = [];
+                    }
                 }
 
-                openTags = [];
+
                 tag--;
                 continue;
             }
 
             // Last tag processing
-            if (nextIndex === -1) {
-                parserData = formatData.substring(currentTag.length, closingIndex);
+            if (nextIndex === -1 && currentIndex === 0) {
+                parserData = formatData.substring(currentTag.length, closingIndex).trim();
                 formatData = formatData.substr(closingIndex + 3);
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
@@ -462,14 +516,13 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             // Assume non nested tag
             if (nextIndex > closingIndex && currentIndex === 0) {
                 //lg("in non nested");
-
                 if (openTags.length === 0) {
-                    parserData = formatData.substring(currentTag.length, closingIndex);
+                    parserData = formatData.substring(currentTag.length, closingIndex).trim();
                     formatData = formatData.substr(closingIndex + 3);
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
                 } else {
-                    parserData = formatData.substring(currentTag.length, closingIndex);
+                    parserData = formatData.substring(currentTag.length, closingIndex).trim();
                     formatData = formatData.substr(closingIndex + 3);
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
@@ -490,7 +543,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             // Assume nested tag
             if (nextIndex < closingIndex && currentIndex === 0) {
                 //lg("in nested tag");
-                parserData = formatData.substring(currentTag.length, nextIndex);
+                parserData = formatData.substring(currentTag.length, nextIndex).trim();
                 formatData = formatData.substr(nextIndex);
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
@@ -518,7 +571,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         for (var tag = 0; tag < parserObject.tags.length; tag++) {
             singleKey = parserObject.tags[tag].match(singleValueMatch);
             keyValues = parserObject.tags[tag].match(keyValueMatch);
-
 
             if (singleKey !== null) {
                 // Only the first matched singleKey is used for formatting
@@ -574,17 +626,19 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
         for (var data = 0; data < parserObject.data.length; data++) {
             parserData = parserObject.data[data].trim();
-            
+
             // Use whole word as trigger if we have no spaces inside
             if (parserData.indexOf(" ") === -1 && parserData.length !== 0) {
                 triggerOne = parserData.match(triggerMatch)[0].replace(triggerClear, '').trim();
                 if (triggerOne === "") {
-                    triggerOne = parserData;
+                    parserObject.triggers.push([[0, parserData], [0, parserData]]);
+                } else {
+                    parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
                 }
-                parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
+
                 continue;
             }
-            
+
             triggers = parserData.match(triggerMatch);
 
             if (triggers !== null) {
@@ -941,7 +995,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
 
                 // Clean up closings from processed line and alt text
-                activeLine = activeLine.replace(closingMatch,  ' ').replace(spaceCorrection, ' ');
+                activeLine = activeLine.replace(closingMatch, ' ').replace(spaceCorrection, ' ');
                 altLine = altLine.replace(closingMatch, '');
                 if (altLine.trim() !== "") {
                     altTextArray.push(altLine);
@@ -1011,6 +1065,9 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             var fontStyle = [fontShape, 'normal', fontWeight, fontSize, fontFamily];
             var wordSize = 0;
             var wordIndex = 0;
+            
+            var triggerWord = "";
+            var matchedTrigger = [];
 
             if (usePhantom && !hadPhantom) {
                 var phantomIndex = 0;
@@ -1279,33 +1336,38 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
 
                 if (useFormat) {
-                    var triggerWord = "";
+                    triggerWord = "";
+                    matchedTrigger = [];
                     if (word !== "") {
-                        triggerWord = word.match(triggerMatch)
-                        if (triggerWord !== null) {
-                            triggerWord = triggerWord[0].replace(triggerClear, '');
-                            
+                        matchedTrigger = word.match(triggerMatch);
+                        if (matchedTrigger !== null) {
+                            triggerWord = matchedTrigger[0].replace(triggerClear, '');
+
                             if (triggerWord === "") {
                                 triggerWord = word;
                             }
                         }
                     }
 
-                    
+
                     if (orderLevel >= orderSize) {
                         setDefaultStyle();
                         useFormat = false;
                     } else {
                         //lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1]);
                         if ((triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1]) && (wordIndex + 3) >= dataPoints[orderLevel]) {
-                            if (orderLevel === (orderSize-1) && openTags.length === 2) {
+                            if (orderLevel === (orderSize - 1) && openTags.length === 2) {
                                 openTags = [];
                                 setDefaultStyle();
-                                
+
                             }
-                            
+
+                            if (orders[orderLevel] === -1) {
+                                setDefaultStyle();
+                            }
+
                             setStyle(orders[orderLevel]);
-                            
+
                             if (openTags.indexOf(orders[orderLevel]) === -1) {
                                 openTags.push(orders[orderLevel]);
                             }
@@ -1415,7 +1477,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                     useFormat = false;
                                 }
                             }
-                            
+
                             orderLevel++;
                         }
                     } else {
