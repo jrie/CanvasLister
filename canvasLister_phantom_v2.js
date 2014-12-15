@@ -264,7 +264,8 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
 
     var triggerMatch = /[^_][\w\d]*[\,\!\"\'\;\:\;\.\%\$\?]{0,}/g;
-    var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\&\`\!\%\\$?]/g;
+    var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\&\`\!\%\\$\?]/g;
+    var spaceCorrection = /[\s]{2,}/g;
 
     function simpleParse(formatData) {
         //lg('---parser data------------------');
@@ -363,6 +364,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         var processedTags = 0;
 
         var dataPoint = 0;
+        var currentLength = 0;
 
         parserObject.tags = formatData.match(formatTagMatch);
 
@@ -571,7 +573,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         var triggerTwo = '';
 
         for (var data = 0; data < parserObject.data.length; data++) {
-            parserData = parserObject.data[data];
+            parserData = parserObject.data[data].trim();
             
             // Use whole word as trigger if we have no spaces inside
             if (parserData.indexOf(" ") === -1 && parserData.length !== 0) {
@@ -928,7 +930,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                 // Start cleaning up the linedata by clearing tags
                 for (var tag = 0; tag < parserObject.tags.length; tag++) {
-                    activeLine = activeLine.replace(parserObject.tags[tag], ' ').trim();
+                    activeLine = activeLine.replace(parserObject.tags[tag], ' ').replace(spaceCorrection, ' ');
                 }
 
                 // Clean up image definitions from present line and alt text
@@ -939,7 +941,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
 
                 // Clean up closings from processed line and alt text
-                activeLine = activeLine.replace(closingMatch,  ' ');
+                activeLine = activeLine.replace(closingMatch,  ' ').replace(spaceCorrection, ' ');
                 altLine = altLine.replace(closingMatch, '');
                 if (altLine.trim() !== "") {
                     altTextArray.push(altLine);
@@ -968,7 +970,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
             }
 
-            var words = activeLine.trim().replace(/'\r'/g, '').split(' ');
+            var words = activeLine.trim().replace(/'\r'/g, '').trim().split(' ');
             var wordCount = words.length;
 
             var currentWord = 0;
@@ -1454,10 +1456,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                         for (var item = 0; item < processedItems; item++) {
                             var subItem = phantomLines[lastItem - (processedItems - item)];
-                            phantomData.push([subItem[0] + subItem[1], subItem[2]]);
+                            phantomData.push([subItem[0] + subItem[1], subItem[2].trim()]);
                         }
 
-                        phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2]]);
+                        phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2].trim()]);
 
                         availableWidth = canvas.width;
                         processedItems = 0;
@@ -1479,11 +1481,11 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                         for (var item = 0; item < processedItems; item++) {
                             var subItem = phantomLines[lastItem - (processedItems - item)];
-                            phantomData.push([subItem[0] + itemSpace, subItem[2]]);
+                            phantomData.push([subItem[0] + itemSpace, subItem[2].trim()]);
                         }
 
                         // Add last item without any addional spacing
-                        phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2]]);
+                        phantomData.push([phantomLines[lastItem][0], phantomLines[lastItem][2].trim()]);
 
                         // Push a line break, so the formatter knows where to
                         // make a cut in the justified sourceText

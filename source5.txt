@@ -1,6 +1,6 @@
 <size="150%" color="#bafa00"><bi>Hello <color="#ae0000">World</></> <b>from</></> <b size="24px">canvas_Lister_Phantom_v2.js</><i size="22px">!!!</> and some non-formatted text following.
 
-Click me to activate pagination and scaling. Press <bi>left</> or <bi>right</> arrow to see the pagination function working, use <b>plus</> or <b>minus</> on the numpad, to size me wider or thinner.
+Click me to activate pagination and scaling. Press <bi>left</> or <bi>right</> arrow to see the pagination function working, use <b>plus</> or <b>minus</> on the numpad or keyboard, to size me wider or thinner.
 
 <size="22px">Some general information text, please scroll down to see the images going.</>
 
@@ -13,7 +13,7 @@ This text wont be justified, since it fits in the whole line without adjustments
 <color="#aa0000" size="14px">Leberkas <bi color="#0044ff">Bold italic and blue test case</> regular text.</>
 <color="#dede00" size="250%">Text in large size of 250% <bi>and more text in same size, but bold italic</> </>Regular text <color="#0088aa" size="175%">mixed with 175%</> and keep going regular.
 
-<color="#eeee00">Now a <color="#ae0000">little bacon ipsum:</> </>Strip steak west <bi color="#5533ff">short loin</> cow shank pork bell shankley. Shoulder jowl pork chop salami doner tri-tip kielbasa fatback corned beef short ribs cow shankle bresaola. Beef salami ham prosciutto spare ribs corned beef, <color="#244896" size="20px">ball tip hamburger short loin.</> Boudin ball tip pig pork meatloaf flank tri-tip.
+<color="#eeee00">Now a <color="#ae0000">little bacon ipsum:</>Strip steak </>west <bi color="#5533ff">short loin</> cow shank pork bell shankley. Shoulder jowl pork chop salami doner tri-tip kielbasa fatback corned beef short ribs cow shankle bresaola. Beef salami ham prosciutto spare ribs corned beef, <color="#244896" size="20px">ball tip hamburger short loin.</> Boudin ball tip pig pork meatloaf flank tri-tip.
 
 Mixing in <i  >a very sluggish styled tag</> and here <b size="12px" color="#eeaa00" siz=>broken key values which are filtered out!</>
 
