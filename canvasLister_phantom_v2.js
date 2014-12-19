@@ -2,7 +2,7 @@
 
 function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, textAlignment, backgroundColor, fontDefaultColor, sourceText) {
 
-    var pages = [];
+    var canvasPages = [];
 
     // If layouting is not in progress anymore, do the actual image loading
     var inLayoutProcess = false;
@@ -160,6 +160,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var offsetY = 10;
     var sizeX = canvas.width - (offsetX * 2);
     var sizeY = canvas.height - (offsetY * 2);
+    var lineSpacingPercent = 0.3;
 
     // Reset any positiong
     ci.translate(0, 0);
@@ -189,7 +190,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         fontDefaultSize = '11px';
     }
 
-    var fontDefaultLineHeight = parseFloat(fontDefaultSize) + (parseFloat(fontDefaultSize) * 0.3);
+    var fontDefaultLineHeight = parseFloat(fontDefaultSize) + (parseFloat(fontDefaultSize) * lineSpacingPercent);
 
     if (fontDefaultWeight === null) {
         fontDefaultWeight = 'normal';
@@ -835,7 +836,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         } else {
                             fontSize = keyValues[keyItem][1];
                         }
-                        var newHeight = parseFloat(fontSize) + (parseFloat(fontSize) * 0.3);
+                        var newHeight = parseFloat(fontSize) + (parseFloat(fontSize) * lineSpacingPercent);
                         if (lineHeightHint < newHeight) {
                             lineHeightHint = newHeight;
                         }
@@ -853,7 +854,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         }
     }
 
-    function resetStyle(resetLevel, openTags) {
+    function resetStyle(resetLevel, openTagCount) {
         // Get key value formatting or empty array
         keyValues = [];
         if (tagKeyValues.hasOwnProperty(resetLevel)) {
@@ -898,7 +899,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         }
 
         // If we have open tags, dont reset to defaults but previous tag values
-        if (openTags > 0) {
+        if (openTagCount > 0) {
             //lg("setting style to: " + (resetLevel - 1) + ", from openTag: " + openTags);
             setStyle(resetLevel - 1);
         } else {
@@ -914,13 +915,13 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var imgCounter = 0;
     function drawImages() {
 
-        if (inLayoutProcess) {
+        if (inLayoutProcess || escapeLayoutProcess) {
             return;
         }
 
         if (imgCounter >= phantomImages.length) {
-            if (pages.length > 0) {
-                ci.putImageData(pages[0], 0, 0);
+            if (canvasPages.length > 0) {
+                ci.putImageData(canvasPages[0], 0, 0);
             }
             activePage = 0;
             return;
@@ -931,15 +932,15 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             window.requestAnimationFrame(drawImages);
             return;
         } else {
-            if (pages.length > 0) {
+            if (canvasPages.length > 0) {
                 clearAndFill();
-                ci.putImageData(pages[phantomImg[6]], 0, 0);
+                ci.putImageData(canvasPages[phantomImg[6]], 0, 0);
             }
 
             ci.drawImage(phantomImg[1], phantomImg[2], phantomImg[3], phantomImg[4], phantomImg[5]);
 
-            if (pages.length > 0) {
-                pages[phantomImg[6]] = ci.getImageData(0, 0, canvas.width, canvas.height);
+            if (canvasPages.length > 0) {
+                canvasPages[phantomImg[6]] = ci.getImageData(0, 0, canvas.width, canvas.height);
             }
             imgCounter++;
         }
@@ -1000,8 +1001,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         var openTags = [];
         var orderSize = 0;
 
-        // Set the amount of pages used to zero
-        pages = [];
+        // Set the amount of canvasPages used to zero
+        canvasPages = [];
+        phantomImages = [];
+        imgCounter = 0;
 
         // Set default style on refresh
         setDefaultStyle();
@@ -1191,7 +1194,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             bottomX = 0;
 
                             if ((stepY + img.height + img.description[2]) > (sizeY - 20)) {
-                                pages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
+                                canvasPages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
                                 clearAndFill();
                                 stepY = 0;
                             }
@@ -1225,7 +1228,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                 }
 
                                 if ((stepY + img.height + img.description[2]) > (sizeY - 20)) {
-                                    pages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
+                                    canvasPages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
                                     clearAndFill();
                                     stepY = 0;
                                 }
@@ -1242,7 +1245,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                 }
 
                                 if ((stepY + img.height + img.description[2]) > (sizeY - 20)) {
-                                    pages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
+                                    canvasPages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
                                     clearAndFill();
                                     stepY = 0;
                                 }
@@ -1252,7 +1255,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         // Add image to the stack for further drawing after script execution
                         var phantomImage = new Image();
                         phantomImage.src = currentImage.src;
-                        phantomImages.push([currentImage, phantomImage, stepX, stepY, img.width, img.height, pages.length]);
+                        phantomImages.push([currentImage, phantomImage, stepX, stepY, img.width, img.height, canvasPages.length]);
 
                         // Add the description text underneath the image
                         stepY += img.height;
@@ -1378,7 +1381,9 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         phantomIndex++;
 
                         // Add vertical spacing according to general rules
-                        if (fontDefaultLineHeight < lineHeightHint) {
+                        if (fontDefaultLineHeight < lineHeightHint && openTags.length !== 0) {
+                            stepY += lineHeightHint;
+                        } else if (fontDefaultLineHeight < lineHeightHint && openTags.length === 0) {
                             stepY += lineHeightHint;
                         } else {
                             stepY += fontDefaultLineHeight;
@@ -1415,13 +1420,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         if ((triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1]) && (wordIndex + 3) >= dataPoints[orderLevel]) {
                             if (orders[orderLevel] === -1 || orderLevel === orderSize) {
                                 setDefaultStyle();
-                            }
 
+                            }
                             setStyle(orders[orderLevel]);
-
-                            if (openTags.indexOf(orders[orderLevel]) === -1) {
-                                openTags.push(orders[orderLevel]);
-                            }
+                            openTags.push(orders[orderLevel]);
                         }
 
                         if (triggers[orderLevel] === false) {
@@ -1458,7 +1460,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                     currentWord++;
                     if (!usePhantom) {
                         if (stepY > (sizeY - 40)) {
-                            pages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
+                            canvasPages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
                             clearAndFill();
                             stepX = 0;
                             stepY = 0;
@@ -1502,10 +1504,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                     //lg("OUT ---- word: "+ triggerWord + " --------- IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
                     if (triggerWord === triggers[orderLevel][1][1]) {
                         if (orders[orderLevel] > orders[orderLevel + 1]) {
-                            var openTagItems = openTags.length - 1;
-                            while (openTagItems) {
-                                resetStyle(openTags[openTagItems], openTagItems);
-                                openTagItems--;
+                            var openTagCount = openTags.length - 1;
+                            while (openTagCount) {
+                                resetStyle(openTags[openTagCount], openTagCount);
+                                openTagCount--;
                             }
 
                             openTags = [];
@@ -1537,6 +1539,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 stepY = 0;
                 usePhantom = false;
                 hadPhantom = true;
+                optimalY = 0;
 
                 var phantomData = [];
                 var currentItem;
@@ -1553,16 +1556,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         lastItem = textItem - 1;
                         processedItems--;
 
-                        // Figure out the optimal placement on Y for text
-                        optimalY = fontDefaultLineHeight;
-                        subItem = [];
-                        for (var item = 0; item < processedItems; item++) {
-                            subItem = phantomLines[lastItem - (processedItems - item)];
-                            if (optimalY < subItem[2]) {
-                                optimalY = subItem[2] + (subItem[2] * 0.3);
-                            }
-                        }
-
                         //  Write actual text data with X and Y spacement
                         for (var item = 0; item < processedItems; item++) {
                             subItem = phantomLines[lastItem - (processedItems - item)];
@@ -1573,9 +1566,16 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                         availableWidth = canvas.width;
                         processedItems = 0;
+                        optimalY = 0;
                         continue;
                     } else if (currentItem !== '-') {
+                        // Shrink down available space on x and
+                        // get optimal Y position for line
                         availableWidth -= currentItem[0];
+                        if (optimalY < currentItem[2]) {
+                            optimalY = currentItem[2];
+                        }
+
                         processedItems++;
                         continue;
                     } else if (currentItem === '-') {
@@ -1584,21 +1584,9 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         // Reduce the width by 20, because we have the
                         // canvas.translate by 10 on x the x axis
                         availableWidth -= 20;
-
-                        // Calculate the spacing we can give to each item
                         processedItems--;
 
-                        // Figure out the optimal placement on Y for text
-                        optimalY = fontDefaultLineHeight;
-
-                        subItem = [];
-                        for (var item = 0; item < processedItems; item++) {
-                            subItem = phantomLines[lastItem - (processedItems - item)];
-                            if (optimalY < subItem[2]) {
-                                optimalY = subItem[2] + (subItem[2] * 0.3);
-                            }
-                        }
-
+                        // Calculate the spacing we can give to each item
                         itemSpace = parseFloat((availableWidth / (processedItems)).toPrecision(3));
 
                         for (var item = 0; item < processedItems; item++) {
@@ -1615,6 +1603,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                         processedItems = 0;
                         availableWidth = canvas.width;
+                        optimalY = 0;
                         continue;
                     }
                 }
@@ -1623,10 +1612,10 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             window.requestAnimationFrame(drawImages);
         }
 
-        // If we have pages, set the first page active on the canvas
-        if (pages.length > 0) {
-            pages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
-            ci.putImageData(pages[0], 0, 0);
+        // If we have canvasPages, set the first page active on the canvas
+        if (canvasPages.length > 0) {
+            canvasPages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
+            ci.putImageData(canvasPages[0], 0, 0);
         }
 
         // Setting the title and alternative tag for screenreaders from
@@ -1701,17 +1690,17 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         // This code block is used for the paginated, without image support, version
         if (evt.keyCode === 39) {
             activePage++;
-            if (activePage > pages.length - 1) {
+            if (activePage > canvasPages.length - 1) {
                 activePage = 0;
             }
-            ci.putImageData(pages[activePage], 0, 0);
+            ci.putImageData(canvasPages[activePage], 0, 0);
             return;
         } else if (evt.keyCode === 37) {
             activePage--;
             if (activePage < 0) {
-                activePage = pages.length - 1;
+                activePage = canvasPages.length - 1;
             }
-            ci.putImageData(pages[activePage], 0, 0);
+            ci.putImageData(canvasPages[activePage], 0, 0);
             return;
         }
 
