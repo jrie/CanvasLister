@@ -1,6 +1,6 @@
 //'use strict';
 
-function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, textAlignment, backgroundColor, fontDefaultColor, sourceText) {
+function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, defaultLineSpacingPercentage, textAlignment, backgroundColor, fontDefaultColor, sourceText) {
 
     var canvasPages = [];
 
@@ -97,7 +97,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
     // Helper functions to check if userinput is valid
     function isValidNum(input) {
-        if (parseInt(input) === NaN) {
+        if (parseFloat(input) === NaN) {
             return false;
         }
 
@@ -160,7 +160,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var offsetY = 10;
     var sizeX = canvas.width - (offsetX * 2);
     var sizeY = canvas.height - (offsetY * 2);
-    var lineSpacingPercent = 0.3;
+    var lineSpacingPercentage = 0.3;
 
     // Reset any positiong
     ci.translate(0, 0);
@@ -190,7 +190,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         fontDefaultSize = '11px';
     }
 
-    var fontDefaultLineHeight = parseFloat(fontDefaultSize) + (parseFloat(fontDefaultSize) * lineSpacingPercent);
+    var fontDefaultLineHeight = parseFloat(fontDefaultSize) + (parseFloat(fontDefaultSize) * lineSpacingPercentage);
 
     if (fontDefaultWeight === null) {
         fontDefaultWeight = 'normal';
@@ -202,6 +202,12 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
     if (fontDefaultShape === null) {
         fontDefaultShape = 'normal';
+    }
+
+    if (defaultLineSpacingPercentage !== null) {
+        if (isValidNum(defaultLineSpacingPercentage)) {
+            lineSpacingPercentage = defaultLineSpacingPercentage;
+        }
     }
 
     if (textAlignment === null || textAlignment !== 'justified') {
@@ -836,7 +842,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         } else {
                             fontSize = keyValues[keyItem][1];
                         }
-                        var newHeight = parseFloat(fontSize) + (parseFloat(fontSize) * lineSpacingPercent);
+                        var newHeight = parseFloat(fontSize) + (parseFloat(fontSize) * lineSpacingPercentage);
                         if (lineHeightHint < newHeight) {
                             lineHeightHint = newHeight;
                         }
@@ -1125,7 +1131,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             imageStore = parserObject.imageStore;
             orderNestedTags = parserObject.orderNestedTags;
 
-            // Sizes for looping and such
+            // Size for looping
             orderSize = parserObject.orders.length;
 
             // Reset to default values

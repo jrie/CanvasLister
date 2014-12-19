@@ -22,14 +22,16 @@
             //canvasLister_improvedParse(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, backgroundColor, fontDefaultColor, soruceText)
             //canvasLister_improvedParse("canvasItem2", "source2.txt", "Arial", "11px", "normal", "normal", "#1a1a1a", "#00aa00");
 
-            //canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, textAlignment, backgroundColor, fontDefaultColor, sourceText)
+            //canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight, fontDefaultShape, defaultLineSpacingPercent, textAlignment, backgroundColor, fontDefaultColor, sourceText)
             canvasLister_phantom_image("canvasItem2", "source3.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
             
             // Similar to the image version, without image support but pagination
             canvasLister_phantom_pagination("canvasItem3", "source4.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
             
             // Latest development version, supports images, pagination, text equalization if justified
-            canvasLister_phantom_v2("canvasItem4", "source5.txt", "Arial", "11px", "normal", "normal", "justified", "#1a1a1a", "#00aa00");
+            //canvasLister_phantom(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSize, fontDefaultWeight,
+            //                      fontDefaultShape, defaultLineSpacingPercentage (0 - 1.5 ..), textAlignment, backgroundColor, fontDefaultColor, sourceText)
+            canvasLister_phantom_v2("canvasItem4", "source5.txt", "Arial", "11px", "normal", "normal", 0.15, "justified", "#1a1a1a", "#00aa00");
         </script>
     </body>
 
