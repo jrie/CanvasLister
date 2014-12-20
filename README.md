@@ -36,7 +36,7 @@ These versions introduce better parsing, and usage of images or pagination respe
 
 The "canvasLister_phantom_v2.js" version [development version - recommended to use as latest fixes are in here]
 
-This version combines the basic image support and pagination and in addition does allow dynamic canvas resizing in width by pressing plus/minus on the keyboard or numpad as well as generating alternative texts and title attribute from the markup onto the canvas, if no title is provided, which should be an attempt to work better with screenreaders.
+This version combines the basic image support and pagination and in addition does allow dynamic canvas resizing in width by pressing plus/minus on the keyboard or numpad as well as generating alternative texts and title attribute from the markup onto the canvas, if no title is provided, which should be an attempt to work better with screenreaders. Also this version introduces equalized line heights, so differently sized text and regular text are layouted in harmony, as well as the features to control the current active page by click and dragging with the mouse or by device touches. Click and dragging right, while holding the mouse button if used, will move a page forward, moving right will scroll a page backwards.
 
 
 If you find any parsing problems, please let me know so the parsing engine can be improved since it is very tricky to test all corner cases, thx!
