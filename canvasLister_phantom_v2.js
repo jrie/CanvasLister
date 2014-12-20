@@ -1690,24 +1690,41 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     // Set the viewed page to zero and and key handlers for
     // pagination or resizing
     var activePage = 0;
+
+    function pageForward() {
+        activePage++;
+        if (activePage > canvasPages.length - 1) {
+            activePage = 0;
+        }
+        ci.putImageData(canvasPages[activePage], 0, 0);
+        return;
+    }
+
+    function pageBackward() {
+        activePage--;
+        if (activePage < 0) {
+            activePage = canvasPages.length - 1;
+        }
+        ci.putImageData(canvasPages[activePage], 0, 0);
+        return;
+    }
+
     function pagingHandler(evt) {
         evt.preventDefault();
-
         // This code block is used for the paginated, without image support, version
-        if (evt.keyCode === 39) {
-            activePage++;
-            if (activePage > canvasPages.length - 1) {
-                activePage = 0;
+
+        if (evt.keyCode === 37 || evt.keyCode === 39) {
+            if (canvasPages.length === 0) {
+                return;
+            } else {
+                if (evt.keyCode === 39) {
+                    window.requestAnimationFrame(pageForward);
+                    return;
+                } else if (evt.keyCode === 37) {
+                    window.requestAnimationFrame(pageBackward);
+                    return;
+                }
             }
-            ci.putImageData(canvasPages[activePage], 0, 0);
-            return;
-        } else if (evt.keyCode === 37) {
-            activePage--;
-            if (activePage < 0) {
-                activePage = canvasPages.length - 1;
-            }
-            ci.putImageData(canvasPages[activePage], 0, 0);
-            return;
         }
 
         // Increasing or descreasing size by pressing the num pad plus minus
@@ -1726,21 +1743,82 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
         }
 
         setup();
-
     }
 
     canvas.addEventListener("click", function (evt) {
+        evt.preventDefault();
+
+        if (canvasPages.length === 0) {
+            return;
+        }
+
         //lg("added keyboard handlers for "+canvas.getAttribute("id"));
         document.addEventListener("keyup", pagingHandler);
     });
 
+    // Adding mouse move and touch paging handlers
+    var mouseX = 0;
+
+    // The threshold to reach for a page to be move
+    var mouseThreshold = 35;
+
+    function slidePages(evt) {
+
+        if (canvasPages.length === 0) {
+            return;
+        }
+
+        evt.preventDefault();
+
+        if (evt.pageX >= (mouseX + mouseThreshold)) {
+            mouseX = evt.pageX;
+            window.requestAnimationFrame(pageForward);
+            return;
+        }
+
+        if (evt.pageX <= (mouseX - mouseThreshold)) {
+            mouseX = evt.pageX;
+            window.requestAnimationFrame(pageBackward);
+            return;
+        }
+    }
+    ;
+
+    // Mouse move handlers
+    canvas.addEventListener("mouseenter", function (evt) {
+        canvas.removeEventListener("mousemove", slidePages);
+    });
+
+    canvas.addEventListener("mousedown", function (evt) {
+        evt.preventDefault();
+        mouseX = evt.pageX;
+        canvas.addEventListener("mousemove", slidePages);
+    });
+
+    canvas.addEventListener("mouseup", function () {
+        canvas.removeEventListener("mousemove", slidePages);
+    });
+
+
+    // Touch handlers
+    canvas.addEventListener("touchstart", function (evt) {
+        evt.preventDefault();
+        mouseX = evt.pageX;
+        canvas.addEventListener("touchmove", slidePages);
+    });
+
+    canvas.addEventListener("touchend", function () {
+        canvas.removeEventListener("touchmove", slidePages);
+    });
+
+    // General handler to active page by keyboard
     document.addEventListener("click", function (evt) {
         if (evt.target !== document.getElementById(canvasItemId)) {
+            evt.preventDefault();
             //lg("removed keyboard handlers for "+canvas.getAttribute("id"));
             document.removeEventListener("keyup", pagingHandler);
         }
     });
-
 
     // Get sourceFile data or directly call markup processor
     if (sourceFile !== null || sourceFile !== "") {
