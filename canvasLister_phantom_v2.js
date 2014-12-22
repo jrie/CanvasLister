@@ -271,8 +271,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     var imgDescriptionMatch = /description=[\"\'][^\"]*[\"\']{1,2}/gi;
     var imgkeyValueMatch = /[^<\"\'\s]{1,}[\w\d\#]*[^\"\'\=\>\s]/g;
 
-    var triggerMatch = /[^_][\w\d]*[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\-\&\`\!\%\\$\?]{0,}/g;
-    var triggerClear = /[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\-\&\`\!\%\\$\?]{0,}/g;
+    var triggerMatch = /[^_][\w\d\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\-\&\`\!\%\\$\?]*[\.\,\;\:\_\'\"\#\+\*\=\(\)\[\]\-\&\`\!\%\\$\?]{0,}/g;
     var spaceCorrection = /[\s]{2,}/g;
 
     var parserObject = {};
@@ -424,7 +423,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserData = formatData.substring(currentIndex + currentTag.length, closingIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
-                formatData = formatData.substr(closingIndex + 3).trim();
+                formatData = formatData.substr(closingIndex + 3);
                 parserObject.dataPoints.push(dataPoint);
                 continue;
             }
@@ -434,7 +433,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserData = formatData.substring(0, closingIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(0);
-                formatData = formatData.substr(closingIndex + 3).trim();
+                formatData = formatData.substr(closingIndex + 3);
                 parserObject.dataPoints.push(dataPoint);
                 processedTags++;
 
@@ -452,7 +451,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserData = formatData.substring(currentTag.length, nextIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
-                formatData = formatData.substr(nextIndex).trim();
+                formatData = formatData.substr(nextIndex);
 
                 parserObject.dataPoints.push(dataPoint);
                 openTags.push(tag);
@@ -467,7 +466,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
                 parserObject.dataPoints.push(dataPoint);
-                formatData = formatData.substr(closingIndex + 3).trim();
+                formatData = formatData.substr(closingIndex + 3);
 
                 parserData = formatData.substring(0, formatData.length - 3).trim();
                 parserObject.data.push(parserData);
@@ -482,7 +481,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserData = formatData.substring(0, currentIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(-1);
-                formatData = formatData.substr(currentIndex).trim();
+                formatData = formatData.substr(currentIndex);
 
                 parserObject.dataPoints.push(dataPoint);
 
@@ -661,7 +660,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
             // Use whole word as trigger if we have no spaces inside
             if (parserData.indexOf(" ") === -1 && parserData.length !== 0) {
-                triggerOne = parserData.match(triggerMatch)[0].replace(triggerClear, '').trim();
+                triggerOne = parserData.match(triggerMatch)[0].trim();
                 if (triggerOne === "") {
                     parserObject.triggers.push([[0, parserData], [0, parserData]]);
                 } else {
@@ -674,14 +673,14 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             triggers = parserData.match(triggerMatch);
 
             if (triggers !== null) {
-                triggerOne = triggers[0].replace(triggerClear, '').trim();
+                triggerOne = triggers[0].trim();
 
                 if (triggerOne.length === 0) {
                     parserData = parserData.replace(triggerOne, '');
                     triggerTwo = parserData.trim();
                     parserObject.triggers.push([[0, triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
                 } else {
-                    triggerTwo = triggers[triggers.length - 1].replace(triggerClear, '').trim();
+                    triggerTwo = triggers[triggers.length - 1].trim();
                     if (triggerTwo.length === 0) {
                         parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
                     } else {
@@ -1373,7 +1372,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 }
 
                 if (!hadPhantom) {
-                    word = words[currentWord].trim();
+                    word = words[currentWord];
                 } else {
                     if (phantomData[phantomIndex] === '|' || phantomData[phantomIndex] === '-') {
                         // Reset stepX to zero, as we have a forced line brake
@@ -1404,7 +1403,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                     if (word !== "") {
                         matchedTrigger = word.match(triggerMatch);
                         if (matchedTrigger !== null) {
-                            triggerWord = matchedTrigger[0].replace(triggerClear, '');
+                            triggerWord = matchedTrigger[0];
 
                             if (triggerWord === "") {
                                 triggerWord = word;
@@ -1427,6 +1426,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             if (openTags.length > 0) {
                                 for (var index = 0; index < openTags.length - 1; index++) {
                                     setStyle(openTags[index]);
+                                    openTags.splice(1, openTags.length);
                                 }
                             }
 
