@@ -1047,7 +1047,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                     // formatting from within the first tag
                     var tagStartIndex = activeLine.indexOf(parserObject.tags[0]);
                     if (tagStartIndex > 0) {
-                        parserObject.dataPoints[0] = tagStartIndex - parserObject.tags[0].length;
+                        parserObject.dataPoints[0] = tagStartIndex;
                     }
 
                     parserObjectStore.push(parserObject);
@@ -1112,7 +1112,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             matchedTrigger = [];
 
             // The formatter level and formatter switch
-            orderLevel = 0;
+            orderLevel = -1;
             useFormat = parserObject.tags.length !== 0 ? true : false;
             openTags = [];
 
@@ -1415,26 +1415,32 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                         useFormat = false;
                     } else {
                         //lg("IN ---- word: " + triggerWord + " --------- IN ----- ol: " + orderLevel + " --- nol: " + orders[orderLevel + 1]);
-                        if ((triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1]) && (wordIndex + 3) >= dataPoints[orderLevel]) {
-                            if (orders[orderLevel] === -1 || orderLevel === orderSize) {
-                                setDefaultStyle();
 
+                        if (wordIndex >= dataPoints[0]) {
+                            if (orderLevel === -1) {
+                                orderLevel = 0;
                             }
+                            if ((triggers[orderLevel] === false || triggerWord === triggers[orderLevel][0][1]) && (wordIndex + 3) >= dataPoints[orderLevel]) {
+                                if (orders[orderLevel] === -1 || orderLevel === orderSize) {
+                                    setDefaultStyle();
 
-                            if (openTags.length > 0) {
-                                for (var index = 0; index < openTags.length - 1; index++) {
-                                    setStyle(openTags[index]);
-                                    openTags.splice(1, openTags.length);
                                 }
+
+                                if (openTags.length > 0) {
+                                    for (var index = 0; index < openTags.length - 1; index++) {
+                                        setStyle(openTags[index]);
+                                        openTags.splice(1, openTags.length);
+                                    }
+                                }
+
+                                setStyle(orders[orderLevel]);
+                                openTags.push(orders[orderLevel]);
                             }
 
-                            setStyle(orders[orderLevel]);
-                            openTags.push(orders[orderLevel]);
-                        }
-
-                        if (triggers[orderLevel] === false) {
-                            orderLevel++;
-                            continue;
+                            if (triggers[orderLevel] === false) {
+                                orderLevel++;
+                                continue;
+                            }
                         }
                     }
                 }
@@ -1506,7 +1512,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
 
                 // Change formatting if required
-                if (useFormat) {
+                if (useFormat && orderLevel > -1) {
                     //lg("OUT ---- word: "+ triggerWord + " --------- IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
                     if (triggerWord === triggers[orderLevel][1][1]) {
                         if (orders[orderLevel] > orders[orderLevel + 1]) {
@@ -1530,8 +1536,6 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
 
                         orderLevel++;
                     }
-                } else {
-                    orderLevel++;
                 }
             }
 
