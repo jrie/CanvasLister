@@ -1267,7 +1267,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                             var descriptionLineBrake = [];
                             var descWordSize = 0.0;
                             var descSpacerSize = ci.measureText(' ').width;
-                            var currentHeight = 25;
+                            var currentHeight = fontDefaultLineHeight + 11;
 
                             if (ci.measureText(currentImage.description).width > img.width) {
                                 for (var wordItem = 0; wordItem < descriptionWords.length; wordItem++) {
@@ -1276,9 +1276,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                     if (currentWidth > boxWidth - 10) {
                                         descriptionLineBrake.push(wordItem);
                                         currentWidth = (descWordSize + descSpacerSize);
-                                        if ((wordItem + 1) < descriptionWords.length) {
-                                            currentHeight += fontDefaultLineHeight;
-                                        }
+                                        currentHeight += fontDefaultLineHeight;
                                     } else {
                                         currentWidth += descSpacerSize;
                                     }
