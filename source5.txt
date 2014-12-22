@@ -10,6 +10,8 @@ Click me to activate pagination and scaling. Press <bi>left</> or <bi>right</> a
 
 This text wont be justified, since it fits in the whole line without adjustments!
 
+<size="20px" color"#6a6a6a"><b>Bold text</> in 20px now, <size="165%" color="#0035ef">165% to base font size</> <bi color="#ff0000">and continue with another color.</> Now back in the first tag.</> And regular text in normal font size of 11px size.
+
 <color="#aa0000" size="14px">Leberkas <bi color="#0044ff">Bold italic and blue test case</> regular text in red.</>
 <color="#dede00" size="250%">Text in large size of 250% <bi>and more text in same size, but bold italic.</></>Regular text <color="#0088aa" size="175%">mixed with 175%</> and keep going regular.
 
@@ -17,7 +19,7 @@ This text wont be justified, since it fits in the whole line without adjustments
 
 Mixing in <i  >a very sluggish styled tag</> and here <b size="12px" color="#eeaa00" siz=>broken key values which are filtered out!</>
 
-<size="22px">Start of the images</>
+<size="22px">Image start</>
 
 <img bg="#222222" fg="#fff" borderWidth="1px" borderColor="#fff" description="This is the description text and the image is centered" src="supersize-moon.png" height="200px" width="350px">
 <img bg="#222222" fg="#fff" align="left" description="The next image has no description" src="starview_split.jpg" height="120px" width="190px"> <img bg="#222222" fg="#fff" align="left" src="starview1.jpg" height="120px" width="260px"> <img bg="#222222" fg="#fff" align="left" src="starview2.jpg" height="120px" width="260px" description="A left overflowing image"> <img bg="#222222" fg="#fff" borderWidth="1px" borderColor="#fff" description="Centered images brake the flow and long descriptions are overflowing too, extending the description box which text will be overflowing too" src="starview_split.jpg" height="200px" width="350px"> <img bg="#222222" fg="#fff" align="right" description="Aligned right" src="supersize-moon.png" height="120px" width="150px"><img bg="#222222" fg="#fff" align="right" description="Aligned right too" title="title" src="supersize-moon.png" height="120px" width="210px"> <img bg="#222222" fg="#fff" align="right" description="Aligned right too overflowing" title="title" src="starview1.jpg" height="120px" width="190px">test <img bg="#222222" fg="#fff" align="left" description="Aligned left 2" title="title" src="starview2.jpg" height="120px" width="335px">

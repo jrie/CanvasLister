@@ -424,7 +424,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserData = formatData.substring(currentIndex + currentTag.length, closingIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
-                formatData = formatData.substr(closingIndex + 3);
+                formatData = formatData.substr(closingIndex + 3).trim();
                 parserObject.dataPoints.push(dataPoint);
                 continue;
             }
@@ -434,7 +434,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserData = formatData.substring(0, closingIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(0);
-                formatData = formatData.substr(closingIndex + 3);
+                formatData = formatData.substr(closingIndex + 3).trim();
                 parserObject.dataPoints.push(dataPoint);
                 processedTags++;
 
@@ -452,7 +452,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserData = formatData.substring(currentTag.length, nextIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
-                formatData = formatData.substr(nextIndex);
+                formatData = formatData.substr(nextIndex).trim();
 
                 parserObject.dataPoints.push(dataPoint);
                 openTags.push(tag);
@@ -460,14 +460,14 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 continue;
             }
 
-            // Handle the case that we have data from an opnened tag, within antoehr that inside
+            // Handle the case that we have data from an opnened tag, within another one
             // This part fetches the data for the embedded as well as the ending of that data
             if (nextIndex === -1 && closingIndex !== -1 && tag === tagLength - 1 && openTags.length !== 0 && currentIndex === 0) {
                 parserData = formatData.substring(currentTag.length, closingIndex).trim();
                 parserObject.data.push(parserData);
-                parserObject.orders.push(1);
+                parserObject.orders.push(tag);
                 parserObject.dataPoints.push(dataPoint);
-                formatData = formatData.substr(closingIndex + 3);
+                formatData = formatData.substr(closingIndex + 3).trim();
 
                 parserData = formatData.substring(0, formatData.length - 3).trim();
                 parserObject.data.push(parserData);
@@ -482,7 +482,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 parserData = formatData.substring(0, currentIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(-1);
-                formatData = formatData.substr(currentIndex);
+                formatData = formatData.substr(currentIndex).trim();
 
                 parserObject.dataPoints.push(dataPoint);
 
@@ -501,7 +501,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                     parserData = formatData.substring(0, currentIndex).trim();
                     parserObject.data.push(parserData);
                     parserObject.orders.push(-1);
-                    formatData = formatData.substr(currentIndex);
+                    formatData = formatData.substr(currentIndex).trim();
 
                     parserObject.dataPoints.push(dataPoint);
 
@@ -512,7 +512,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                     parserData = formatData.substring(0, currentIndex).trim();
                     parserObject.data.push(parserData);
                     parserObject.orders.push(openTags[0]);
-                    formatData = formatData.substr(currentIndex);
+                    formatData = formatData.substr(currentIndex).trim();
                     /*
                      parserData = formatData.substring(0, closingIndex).trim();
                      parserObject.data.push(parserData);
@@ -523,12 +523,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                     if (parserData.trim() !== "") {
                         dataPoint += parserData.length;
                     }
-
-                    if (closingIndex > currentIndex && openTags.length === 1) {
-                        openTags = [];
-                    }
                 }
-
 
                 tag--;
                 continue;
@@ -537,7 +532,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             // Last tag processing
             if (nextIndex === -1 && currentIndex === 0) {
                 parserData = formatData.substring(currentTag.length, closingIndex).trim();
-                formatData = formatData.substr(closingIndex + 3);
+                formatData = formatData.substr(closingIndex + 3).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
                 processedTags++;
@@ -555,12 +550,12 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                 //lg("in non nested");
                 if (openTags.length === 0) {
                     parserData = formatData.substring(currentTag.length, closingIndex).trim();
-                    formatData = formatData.substr(closingIndex + 3);
+                    formatData = formatData.substr(closingIndex + 3).trim();
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
                 } else {
                     parserData = formatData.substring(currentTag.length, closingIndex).trim();
-                    formatData = formatData.substr(closingIndex + 3);
+                    formatData = formatData.substr(closingIndex + 3).trim();
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
                     formatData = formatData.substr((openTags.length - 1) * 3);
@@ -581,7 +576,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             if (nextIndex < closingIndex && currentIndex === 0) {
                 //lg("in nested tag");
                 parserData = formatData.substring(currentTag.length, nextIndex).trim();
-                formatData = formatData.substr(nextIndex);
+                formatData = formatData.substr(nextIndex).trim();
                 parserObject.data.push(parserData);
                 parserObject.orders.push(tag);
                 openTags.push(tag);
@@ -1428,6 +1423,13 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
                                 setDefaultStyle();
 
                             }
+
+                            if (openTags.length > 0) {
+                                for (var index = 0; index < openTags.length - 1; index++) {
+                                    setStyle(openTags[index]);
+                                }
+                            }
+
                             setStyle(orders[orderLevel]);
                             openTags.push(orders[orderLevel]);
                         }
@@ -1675,7 +1677,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
             ci.translate(offsetX, offsetY);
 
             // If we have resized the canvas, rerun the content layouting
-            if (sourceFile !== null) {
+            if (sourceFile !== null && sourceFile !== "") {
                 loadText(sourceFile);
             } else if (typeof (sourceText) !== undefined) {
                 processMarkup(sourceText);
@@ -1821,7 +1823,7 @@ function canvasLister_phantom_v2(canvasItemId, sourceFile, fontDefaultFamily, fo
     });
 
     // Get sourceFile data or directly call markup processor
-    if (sourceFile !== null || sourceFile !== "") {
+    if (sourceFile !== null && sourceFile !== "") {
         loadText(sourceFile);
     } else if (typeof (sourceText) !== undefined) {
         processMarkup(sourceText);
