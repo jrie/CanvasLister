@@ -1,7 +1,7 @@
-canvas lister
+canvasLister
 =======
 
-canvasLister is a parsing and layout engine for css like syntax on html5 canvas elements.
+canvasLister is a parsing and layout engine with css like syntax for text and images on html5 canvas elements.
 
 
 Usage
