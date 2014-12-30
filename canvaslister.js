@@ -1279,7 +1279,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                             var descSpacerSize = ci.measureText(' ').width;
                             var currentHeight = parseFloat(fontDefaultSize) + 14;
 
-                            if (ci.measureText(currentImage.description).width > img.width) {
+                            if (ci.measureText(currentImage.description).width > img.width - 20) {
                                 for (var wordItem = 0; wordItem < descriptionWords.length; wordItem++) {
                                     descWordSize = ci.measureText(descriptionWords[wordItem]).width;
                                     currentWidth += descWordSize;
