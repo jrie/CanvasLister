@@ -686,7 +686,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                     if (triggerTwo.length === 0) {
                         parserObject.triggers.push([[0, triggerOne], [0, triggerOne]]);
                     } else {
-                        parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo), triggerTwo]]);
+                        parserObject.triggers.push([[parserData.indexOf(triggerOne), triggerOne], [parserData.indexOf(triggerTwo, triggerOne.length), triggerTwo]]);
                     }
                 }
             } else {
@@ -1531,7 +1531,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                 // Change formatting if required
                 if (useFormat && orderLevel > -1) {
                     //lg("OUT ---- word: "+ triggerWord + " --------- IN ----- ol: "+orderLevel+" --- nol: "+orders[orderLevel + 1]+" --- fl: "+formatLevel);
-                    if (triggerWord === triggers[orderLevel][1][1]) {
+                    if (wordIndex > triggers[orderLevel][1][0] && triggerWord === triggers[orderLevel][1][1]) {
                         if (orders[orderLevel] > orders[orderLevel + 1]) {
                             openTagCount = openTags.length - 1;
                             while (openTagCount) {
