@@ -403,10 +403,15 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
             closingIndex = formatData.indexOf('</>');
 
             if (closingIndex === 0) {
-                formatData = formatData.substr(closingIndex + 3);
-                currentIndex = formatData.indexOf(currentTag);
-                nextIndex = formatData.indexOf(nextTag);
-                closingIndex = formatData.indexOf('</>');
+                for (var openItem = 0; openItem < openTags.length - 1; openItem++) {
+                    formatData = formatData.substr(closingIndex + 3);
+                    currentIndex = formatData.indexOf(currentTag);
+                    nextIndex = formatData.indexOf(nextTag);
+                    closingIndex = formatData.indexOf('</>');
+                    if (closingIndex !== 0) {
+                        break;
+                    }
+                }
             }
 
             //lg('tag: '+currentTag);
@@ -449,10 +454,17 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
             // Handle a tag starting inside this tag or no tag following directly
             if (nextIndex !== -1 && nextIndex < closingIndex && currentIndex !== nextIndex) {
                 // lg("closing tag or tag in tag
-                parserData = formatData.substring(currentTag.length, nextIndex).trim();
-                parserObject.data.push(parserData);
-                parserObject.orders.push(tag);
-                formatData = formatData.substr(nextIndex);
+                if (currentIndex === 0) {
+                    parserData = formatData.substring(currentTag.length, nextIndex).trim();
+                    parserObject.data.push(parserData);
+                    parserObject.orders.push(tag);
+                    formatData = formatData.substr(nextIndex);
+                } else {
+                    parserData = formatData.substring(0, currentIndex).trim();
+                    parserObject.data.push(parserData);
+                    parserObject.orders.push(-1);
+                    formatData = formatData.substr(currentIndex + currentTag.length);
+                }
 
                 parserObject.dataPoints.push(dataPoint);
                 openTags.push(tag);
@@ -509,6 +521,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                     parserObject.data.push(parserData);
                     parserObject.orders.push(openTags[0]);
                     formatData = formatData.substr(currentIndex).trim();
+
                     /*
                      parserData = formatData.substring(0, closingIndex).trim();
                      parserObject.data.push(parserData);
@@ -546,13 +559,14 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                     formatData = formatData.substr(closingIndex + 3).trim();
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
+
                 } else {
                     parserData = formatData.substring(currentTag.length, closingIndex).trim();
                     formatData = formatData.substr(closingIndex + 3).trim();
                     parserObject.data.push(parserData);
                     parserObject.orders.push(tag);
                     formatData = formatData.substr((openTags.length - 1) * 3);
-                    openTags = openTags.slice(openTags.length - 1, 1);
+                    openTags = [openTags[0]];
                 }
 
                 parserObject.dataPoints.push(dataPoint);
@@ -1040,7 +1054,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                     }
 
                     parserObjectStore.push(parserObject);
-                    //lg(parserObject);
+                    lg(parserObject);
 
                 } else {
                     var parserObject = parserObjectStore[line];
@@ -1134,6 +1148,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                     var topX = sizeX;
                     var bottomX = 0;
                     var sizeInX = 0;
+                    var scaleFactor = 0;
 
                     function getTallestItem(imageRow) {
                         if (imageRow.length !== 0) {
@@ -1172,6 +1187,12 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                         img.bordercolor = currentImage.bordercolor;
                         img.align = currentImage.align;
                         img.description = ["none", 0, 0];
+
+                        if (img.width >= sizeX) {
+                            scaleFactor = parseFloat(sizeX) / img.width;
+                            img.width = parseInt(Math.floor(img.width * scaleFactor));
+                            img.height = Math.floor(img.height * scaleFactor);
+                        }
 
                         stepY += img.margin;
                         if (img.align === "center") {
@@ -1256,7 +1277,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                             var descriptionLineBrake = [];
                             var descWordSize = 0.0;
                             var descSpacerSize = ci.measureText(' ').width;
-                            var currentHeight = fontDefaultLineHeight + 11;
+                            var currentHeight = fontDefaultLineHeight * 1.8;
 
                             if (ci.measureText(currentImage.description).width > img.width) {
                                 for (var wordItem = 0; wordItem < descriptionWords.length; wordItem++) {
@@ -1270,7 +1291,15 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                                         currentWidth += descSpacerSize;
                                     }
                                 }
+                            }
 
+                            if ((currentHeight + stepY) > (sizeY - 20)) {
+                                var lastItem = phantomImages.length - 1;
+                                canvasPages.push(ci.getImageData(0, 0, canvas.width, canvas.height));
+                                clearAndFill();
+                                stepY = img.height;
+                                phantomImages[lastItem][3] = 0;
+                                phantomImages[lastItem][6] = canvasPages.length;
                             }
 
                             img.description = ["bottom", img.width, currentHeight];
@@ -1308,7 +1337,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                                 var previousX = stepX;
                                 var descWord = "";
                                 stepX += 10;
-                                stepY += 16;
+                                stepY += fontDefaultLineHeight * 1.025;
                                 descSpacerSize = ci.measureText(" ").width;
                                 descWordSize = 0.0;
 
@@ -1347,6 +1376,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                         }
 
                         stepY -= (img.height + img.margin);
+
                         if (item === imageStore.length - 1 || currentImage.align === "center") {
                             stepY += (img.margin + img.height);
                             if (currentImage.description !== '') {
@@ -1368,9 +1398,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                         phantomIndex++;
 
                         // Add vertical spacing according to general rules
-                        if (fontDefaultLineHeight < lineHeightHint && openTags.length !== 0) {
-                            stepY += lineHeightHint;
-                        } else if (fontDefaultLineHeight < lineHeightHint && openTags.length === 0) {
+                        if (fontDefaultLineHeight < lineHeightHint) {
                             stepY += lineHeightHint;
                         } else {
                             stepY += fontDefaultLineHeight;
@@ -1416,7 +1444,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                                 }
 
                                 if (openTags.length > 0) {
-                                    for (var index = 0; index < openTags.length - 1; index++) {
+                                    for (var index = 1; index < openTags.length - 1; index++) {
                                         setStyle(openTags[index]);
                                         openTags.splice(1, openTags.length);
                                     }
