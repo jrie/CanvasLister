@@ -1277,7 +1277,7 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                             var descriptionLineBrake = [];
                             var descWordSize = 0.0;
                             var descSpacerSize = ci.measureText(' ').width;
-                            var currentHeight = fontDefaultLineHeight * 1.8;
+                            var currentHeight = parseFloat(fontDefaultSize) + 14;
 
                             if (ci.measureText(currentImage.description).width > img.width) {
                                 for (var wordItem = 0; wordItem < descriptionWords.length; wordItem++) {
@@ -1331,13 +1331,13 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
                             ci.fillStyle = currentImage.fg;
 
                             if (descriptionLineBrake.length === 0) {
-                                ci.fillText(currentImage.description, stepX + 10, stepY + 16);
+                                ci.fillText(currentImage.description, stepX + 10, stepY + (parseFloat(fontDefaultSize) * 1.35));
                             } else {
                                 var previousY = stepY;
                                 var previousX = stepX;
                                 var descWord = "";
                                 stepX += 10;
-                                stepY += fontDefaultLineHeight * 1.025;
+                                stepY += parseFloat(fontDefaultSize) * 1.35;
                                 descSpacerSize = ci.measureText(" ").width;
                                 descWordSize = 0.0;
 
@@ -1834,8 +1834,13 @@ function canvasLister(canvasItemId, sourceFile, fontDefaultFamily, fontDefaultSi
 
     // General handler to active page by keyboard
     document.addEventListener("click", function (evt) {
+
+        // Ignore right mouse button clicks
+        if (evt.button === 2) {
+            return;
+        }
+
         if (evt.target !== document.getElementById(canvasItemId)) {
-            evt.preventDefault();
             //lg("removed keyboard handlers for "+canvas.getAttribute("id"));
             document.removeEventListener("keyup", pagingHandler);
         }
