@@ -3,6 +3,7 @@ canvasLister
 
 canvasLister is a parsing and layout engine with css like syntax for text and images on html5 canvas elements.
 
+See the demo live here: http://jrie.github.io/CanvasLister/example.html
 
 Usage
 =======
